@@ -1,0 +1,243 @@
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, UniqueConstraint, Index
+from sqlalchemy.dialects.postgresql import JSONB
+from datetime import datetime
+from src.infrastructure.database import Base
+
+class Permission(Base):
+    __tablename__ = "app_permissions_masters"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128), nullable=False)
+    module_name = Column(String(128))
+    module_display_sequence = Column(Integer)
+    feature_name = Column(String(128))
+    feature_display_sequence = Column(Integer)
+    class_name = Column(String(128))
+    functions_name = Column(String(256))
+    permission_key = Column(String(1024), unique=True)
+    created_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Menu(Base):
+    __tablename__ = "app_access_menu_masters"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    display_name = Column(String(255))
+    menu_or_widget = Column(Boolean, default=False)
+    icon = Column(String(255))
+    app_url = Column(String(512))
+    route_path = Column(String(512))
+    has_parent = Column(Boolean, default=False)
+    parent_menu_id = Column(Integer, ForeignKey("app_access_menu_masters.id"))
+    display_sequence = Column(Integer)
+    permission_key = Column(String(255))
+    created_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class RoleMenuPermission(Base):
+    __tablename__ = "app_access_role_menu_maps"
+    id = Column(Integer, primary_key=True)
+    role_id = Column(Integer, ForeignKey("app_access_master_roles.id", ondelete="CASCADE"), nullable=False)
+    role_access_json = Column(JSONB)
+    permission_id = Column(Integer, ForeignKey("app_permissions_masters.id", ondelete="CASCADE"), nullable=False)
+    menu_id = Column(Integer, ForeignKey("app_access_menu_masters.id", ondelete="CASCADE"))
+    menu_access_json = Column(JSONB)
+    created_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("role_id", "permission_id", "menu_id", name="uq_role_menu_perm"),)
+
+class UserDevice(Base):
+    __tablename__ = "app_access_user_devices"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    device_type = Column(String(50))
+    device_os = Column(String(50))
+    device_browser = Column(String(100))
+    device_ip = Column(String(50))
+    last_login_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class UserContactInfo(Base):
+    __tablename__ = "app_user_contact_infos"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    channel_type = Column(String(50), nullable=False)
+    contact_value = Column(String(256), nullable=False)
+    is_primary = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
+    verified_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+    opt_in_marketing = Column(Boolean, default=True)
+    opt_in_transactional = Column(Boolean, default=True)
+    preferred_time = Column(String(50))
+    display_sequence = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("user_id", "channel_type", "contact_value", name="uq_contact_channel"),)
+
+class UserAddress(Base):
+    __tablename__ = "app_user_addresses"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    address_type = Column(String(50), nullable=False)
+    is_primary = Column(Boolean, default=False)
+    recipient_name = Column(String(256))
+    address_line1 = Column(String(512), nullable=False)
+    address_line2 = Column(String(512))
+    city = Column(String(128), nullable=False)
+    state_province = Column(String(128))
+    postal_code = Column(String(20))
+    country_code = Column(String(10))
+    latitude = Column(String(20))
+    longitude = Column(String(20))
+    phone_number = Column(String(50))
+    delivery_instructions = Column(Text)
+    is_verified = Column(Boolean, default=False)
+    verified_at = Column(DateTime)
+    master_country_id = Column(Integer)
+    master_state_id = Column(Integer)
+    master_city_id = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class UserSubscription(Base):
+    __tablename__ = "app_user_subscriptions"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    master_app_subscription_types_id = Column(Integer, nullable=False)
+    start_date = Column(DateTime, default=datetime.utcnow)
+    end_date = Column(DateTime)
+    auto_renew = Column(Boolean, default=True)
+    payment_method = Column(String(50))
+    amount = Column(String(20))
+    master_currency_id = Column(String(10), default='USD')
+    billing_cycle = Column(String(50))
+    last_payment_date = Column(DateTime)
+    next_payment_date = Column(DateTime)
+    canceled_at = Column(DateTime)
+    canceled_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    reason_for_cancellation = Column(String(2024))
+    creator_user_id = Column(Integer, ForeignKey("app_users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class UserPaymentMethod(Base):
+    __tablename__ = "app_user_payment_methods"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    payment_type = Column(String(50), nullable=False)
+    is_primary = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    payment_token = Column(String(512))
+    card_last_four = Column(String(4))
+    card_brand = Column(String(50))
+    card_exp_month = Column(String(2))
+    card_exp_year = Column(String(4))
+    cardholder_name = Column(String(256))
+    bank_account_token = Column(String(512))
+    bank_last_four = Column(String(4))
+    bank_name = Column(String(256))
+    account_type = Column(String(50))
+    billing_address_id = Column(Integer)
+    external_email = Column(String(256))
+    external_account_id = Column(String(256))
+    fingerprint = Column(String(128))
+    expires_at = Column(DateTime)
+    verified_at = Column(DateTime)
+    last_used_at = Column(DateTime)
+    failed_attempts = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class UserPaymentHistory(Base):
+    __tablename__ = "app_user_payment_history"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    payment_method_id = Column(Integer, ForeignKey("app_user_payment_methods.id"))
+    transaction_type = Column(String(50), nullable=False)
+    amount = Column(String(20), nullable=False)
+    currency = Column(String(10), default='USD')
+    status = Column(String(50), nullable=False)
+    stripe_payment_id = Column(String(255))
+    stripe_invoice_id = Column(String(255))
+    external_transaction_id = Column(String(255))
+    shop_order_id = Column(Integer)
+    app_user_subscription_id = Column(Integer)
+    description = Column(Text)
+    failure_reason = Column(Text)
+    receipt_url = Column(String(2048))
+    payment_metadata = Column(JSONB)
+    processed_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class UserTag(Base):
+    __tablename__ = "app_user_tags"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    tag_name = Column(String(255), nullable=False)
+    tag_value = Column(Text)
+    master_tag_group_id = Column(Integer)
+    master_tag_category_id = Column(Integer)
+    master_tag_id = Column(Integer)
+    tag_group_name = Column(String(128))
+    tag_category_name = Column(String(128))
+    display_sequence = Column(Integer)
+    rating_score = Column(Integer)
+    is_filled = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
+    is_default_tag = Column(Boolean, default=False)
+    verified_at = Column(DateTime)
+    verified_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    ai_suggested = Column(Boolean, default=False)
+    ai_confidence_score = Column(String(10))
+    ai_suggestion_date = Column(DateTime)
+    user_accepted_ai = Column(Boolean)
+    source_type = Column(String(50))
+    created_by_user_id = Column(Integer, ForeignKey("app_users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (Index("idx_user_tags_user", "user_id"),
+                      Index("idx_user_tags_group", "master_tag_group_id"),
+                      Index("idx_user_tags_category", "master_tag_category_id"),
+                      Index("idx_user_tags_filled", "user_id", "is_filled"),
+                      Index("idx_user_tags_verified", "is_verified"),
+                      Index("idx_user_tags_ai", "ai_suggested", "user_accepted_ai"))
+
+class UserProfileCompletion(Base):
+    __tablename__ = "app_user_profile_completion_tracking"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False)
+    profile_section = Column(String(100), nullable=False)
+    master_tag_group_id = Column(Integer)
+    master_tag_category_id = Column(Integer)
+    tag_group_name = Column(String(128))
+    tag_category_name = Column(String(128))
+    required_tags_count = Column(Integer, default=0)
+    filled_tags_count = Column(Integer, default=0)
+    verified_tags_count = Column(Integer, default=0)
+    completion_percentage = Column(String(10), default='0.00')
+    is_complete = Column(Boolean, default=False)
+    is_required_section = Column(Boolean, default=False)
+    priority_level = Column(Integer, default=5)
+    ai_assistance_requested = Column(Boolean, default=False)
+    ai_last_suggested_at = Column(DateTime)
+    ai_suggestions_count = Column(Integer, default=0)
+    ai_accepted_count = Column(Integer, default=0)
+    reminder_enabled = Column(Boolean, default=False)
+    reminder_sent_at = Column(DateTime)
+    next_reminder_date = Column(DateTime)
+    reminder_count = Column(Integer, default=0)
+    last_updated_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("user_id", "profile_section", "master_tag_group_id", "master_tag_category_id", name="uq_profile_completion"),
+                      Index("idx_profile_completion_user", "user_id"),
+                      Index("idx_profile_completion_section", "profile_section"),
+                      Index("idx_profile_completion_incomplete", "user_id", "is_complete"),
+                      Index("idx_profile_completion_priority", "priority_level", "completion_percentage"),
+                      Index("idx_profile_completion_reminder", "reminder_enabled", "next_reminder_date"))
