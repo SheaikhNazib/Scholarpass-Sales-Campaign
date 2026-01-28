@@ -16,12 +16,12 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy application code (excluding entrypoint.sh)
+COPY --exclude=entrypoint.sh . .
 
-# Copy entrypoint script
+# Copy entrypoint script and fix line endings
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose port (will be overridden by docker-compose)
 EXPOSE 8000
