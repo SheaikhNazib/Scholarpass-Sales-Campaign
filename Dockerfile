@@ -23,15 +23,11 @@ COPY . .
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Expose port
+# Expose port (will be overridden by docker-compose)
 EXPOSE 8000
 
-# Set environment variables
+# Set only essential environment variables
 ENV PYTHONUNBUFFERED=1
-ENV DB_AUTO_MIGRATE=true
-ENV ENVIRONMENT=development
-ENV SERVER_HOST=0.0.0.0
-ENV SERVER_PORT=8000
 
 # Run entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

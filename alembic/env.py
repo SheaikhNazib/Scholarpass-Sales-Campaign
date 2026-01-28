@@ -33,6 +33,19 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from src.infrastructure.database import Base
+
+# Import all models to register them with Base.metadata
+from src.modules.user.models import AppUser, AppRole, UserRole, UserOTP, UserSession, UserNotification
+from src.modules.access.models import Permission, Menu, RoleMenuPermission, UserDevice, UserContactInfo, UserAddress, UserSubscription, UserPaymentMethod, UserPaymentHistory, UserTag, UserProfileCompletion
+from src.modules.notification.models import Notification
+from src.modules.master.models import Country, State, County, City, ZipCode, Currency, Language, TimeZone, HubType, Hub, AIModel, AIPromptLibrary, DurationType, AppSubscriptionType, TagGroup, TagCategory, Tag, FiscalQuarter
+from src.modules.connect.models import ConnectChannel, ConnectTemplate, ConnectMessage, ConnectCall
+from src.modules.tpm.models import TPMTaskStatus, TPMProjectStatus, TPMTag, TPMTaskTemplate, TPMProject, TPMProjectDocument, TPMProjectTeam, TPMProjectNote, TPMTaskEvent, TPMTaskDocument, TPMTaskTeam, TPMTaskNote, TPMTaskWorkItem, TPMAIAgentRule, TPMAIAgentConversation
+from src.modules.crm.models import CRMCompanyType, CRMContactType, CRMDocumentType, CRMCompany, CRMContact, CRMCompanyTag, CRMContactTag, CRMCompanyContactMap, CRMAccountRepsTeam, CRMBankInfo, CRMDocument, CRMNote, CRMGroup, CRMGroupMember, CRMGroupMessage
+from src.modules.sales.models import CRMSalesLeadSourceChannel, CRMSalesLeadStatus, CRMProposalStatus, CRMProposalType, CRMProposalTemplate, CRMSalesCampaign, CRMSalesCampaignCompany, CRMSalesCampaignContact, CRMSalesCampaignExecutionTeam, CRMSalesCampaignTodo, CRMSalesCampaignDocument, CRMSalesCampaignNote, CRMSalesLeadOpportunity, CRMSalesLeadNote, CRMSalesProjection, CRMSalesTractionReport, CRMProposal, CRMProposalRecipient, CRMProposalSubmission, CRMProposalDocument, CRMCompanyProfileAICache
+from src.modules.contract.models import CRMContractType, CRMContractCommissionType, CRMContract, CRMContractTerm, CRMContractMultiplePartiesSign, CRMContractTrackerTaskReminder
+from src.modules.shop.models import ShopOrderChannel, ShopOrderPaymentType, ShopOrderStatus, ShopProductCategory, ShopImageVideoLibrary, ShopStoreType, ShopStore, ShopProduct, ShopOrder, ShopOrderDetail, ShopOrderPayment, ShopShoppingCart, ShopDiscountCode, ShopProductReview, ShopOrderReturn, ShopProductInventory, ShopInventoryMovement, ShopWishlist, ShopProductVariantType, ShopProductVariantValue, ShopProductVariant, ShopShippingMethod, ShopOrderShipment, ShopProductComparison, ShopStoreHours, ShopTaxRate, ShopProductSupplier
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -83,7 +96,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            render_as_batch=True
         )
 
         with context.begin_transaction():

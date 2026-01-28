@@ -1,19 +1,19 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
     container_name: scholarpass_db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: scholarpass_user
-      POSTGRES_PASSWORD: scholarpass_password
-      POSTGRES_DB: scholarpass_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scholarpass_user"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,8 +23,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: scholarpass_redis
+    env_file:
+      - .env
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -41,15 +43,9 @@ services:
       dockerfile: Dockerfile
     container_name: scholarpass_app
     ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://scholarpass_user:scholarpass_password@db:5432/scholarpass_db
-      - REDIS_URL=redis://redis:6379/0
-      - DEBUG=True
-      - ENVIRONMENT=development
-      - DB_AUTO_MIGRATE=true
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8000
+      - "${PORT}:8000"
+    env_file:
+      - .env
     volumes:
       - .:/app
     depends_on:

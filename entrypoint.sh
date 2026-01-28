@@ -15,6 +15,9 @@ ENVIRONMENT="${ENVIRONMENT:-development}"
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
 SERVER_PORT="${SERVER_PORT:-8000}"
 RELOAD_EXCLUDE="${RELOAD_EXCLUDE:-venv,.git,__pycache__,.pytest_cache,.venv}"
+DB_HOST="${DB_HOST:-db}"
+DB_USER="${DB_USER:-postgres}"
+DB_NAME="${DB_NAME:-scholarpass_db}"
 
 # Helper functions
 log_info() {
@@ -58,17 +61,7 @@ wait_for_db() {
     attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if python3 -c "
-import os
-from sqlalchemy import create_engine
-try:
-    engine = create_engine(os.getenv('DATABASE_URL', 'postgresql://scholarpass_user:scholarpass_password@db:5432/scholarpass_db'))
-    with engine.connect() as conn:
-        pass
-    print('Database is ready')
-except Exception as e:
-    raise e
-" 2>/dev/null; then
+        if pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" 2>/dev/null; then
             log_success "Database is ready"
             return 0
         fi
