@@ -1,57 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, Plus } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
-
-interface Opportunity {
-  id: number;
-  title: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  companyName: string;
-  status: string;
-  expectedValue: number;
-  score: number;
-  closingDate: string;
-  owner: string;
-}
+import { leadActions, Lead } from '@/actions/lead';
 
 export default function MyOpportunityPipelines() {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock data - replace with actual API call
-  const opportunities: Opportunity[] = [
-    {
-      id: 1,
-      title: 'District Wide Implementation',
-      contactName: 'John Smith',
-      email: 'john.smith@abschools.edu',
-      phone: '(555) 123-4567',
-      companyName: 'ABC School District',
-      status: 'Negotiation',
-      expectedValue: 50000,
-      score: 75,
-      closingDate: '2024-03-15',
-      owner: 'You'
-    },
-    {
-      id: 2,
-      title: 'University Partnership Q1',
-      contactName: 'Sarah Johnson',
-      email: 's.johnson@xyz.edu',
-      phone: '(555) 987-6543',
-      companyName: 'XYZ University',
-      status: 'Proposal',
-      expectedValue: 125000,
-      score: 60,
-      closingDate: '2024-04-01',
-      owner: 'You'
-    },
-  ];
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const columns: Column<Opportunity>[] = [
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch leads from API
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        setLoading(true);
+        const response = await leadActions.getMy({
+          per_page: 100, // Get more items since backend doesn't support pagination
+          search: debouncedSearch || undefined,
+        });
+        
+        setLeads(response || []);
+      } catch (error) {
+        console.error('Failed to fetch leads:', error);
+        setLeads([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeads();
+  }, [debouncedSearch]);
+
+  const columns: Column<Lead>[] = [
     {
       key: 'title',
       title: 'Title',
@@ -63,61 +54,75 @@ export default function MyOpportunityPipelines() {
       )
     },
     {
-      key: 'contactName',
+      key: 'first_name',
       title: 'Contact',
       sortable: true,
       render: (value, item) => (
         <div className="flex flex-col">
-          <span className="text-sm text-gray-900">{value}</span>
-          <span className="text-xs text-gray-500">{item.email}</span>
+          <span className="text-sm text-gray-900">
+            {item.first_name && item.last_name 
+              ? `${item.first_name} ${item.last_name}` 
+              : item.first_name || item.last_name || 'N/A'}
+          </span>
+          <span className="text-xs text-gray-500">{item.email || 'No email'}</span>
         </div>
       )
     },
     {
-      key: 'companyName',
+      key: 'company_name',
       title: 'Company',
       sortable: true,
+      render: (value) => (
+        <span className="text-sm text-gray-900">{value || 'N/A'}</span>
+      )
     },
     {
-      key: 'status',
+      key: 'status_name',
       title: 'Status',
       sortable: true,
       render: (value) => (
         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-          {value}
+          {value || 'New'}
         </span>
       )
     },
     {
-      key: 'expectedValue',
+      key: 'expected_sales_amount',
       title: 'Exp. Value',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-gray-900">${value.toLocaleString()}</span>
+        <span className="text-sm text-gray-900">
+          {value ? `$${value.toLocaleString()}` : 'N/A'}
+        </span>
       )
     },
     {
-      key: 'score',
+      key: 'lead_score',
       title: 'Score',
       sortable: true,
-      render: (value) => (
-        <div className="flex items-center gap-2">
-           <div className="w-16 bg-gray-200 rounded-full h-1.5">
-            <div 
-              className={`h-1.5 rounded-full ${value >= 70 ? 'bg-green-500' : value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
-              style={{ width: `${value}%` }}
-            ></div>
+      render: (value) => {
+        const score = value || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-16 bg-gray-200 rounded-full h-1.5">
+              <div 
+                className={`h-1.5 rounded-full ${score >= 70 ? 'bg-green-500' : score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${score}%` }}
+              ></div>
+            </div>
+            <span className="text-xs text-gray-600">{score}</span>
           </div>
-          <span className="text-xs text-gray-600">{value}</span>
-        </div>
-      )
+        );
+      }
     },
     {
-      key: 'closingDate',
+      key: 'expected_closing_date',
       title: 'Closing Date',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-gray-500">{value}</span>
+        <span className="text-sm text-gray-500">
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
+        </span>
       )
     }
   ];
@@ -157,9 +162,10 @@ export default function MyOpportunityPipelines() {
 
       {/* Pipeline List */}
       <TableArchive
-        data={opportunities}
+        data={leads}
         columns={columns}
         itemsPerPage={10}
+        loading={loading}
         onRowClick={(row) => console.log('Clicked:', row)}
         emptyMessage="No sales opportunities found"
       />
