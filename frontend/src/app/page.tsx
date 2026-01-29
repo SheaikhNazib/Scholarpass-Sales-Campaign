@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Welcome to ScholarPass Sales Campaign
+        Welcome to ScholarPASS Sales Campaign
       </h1>
       <div className="bg-white rounded-lg shadow-md p-6">
         <p className="text-gray-600 mb-4">

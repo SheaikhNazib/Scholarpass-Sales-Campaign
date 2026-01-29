@@ -54,7 +54,7 @@ export default function Sidebar() {
         {/* Logo/Header */}
         <div className="px-6 py-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-primary-600">
-            ScholarPass
+            ScholarPASS
           </h1>
           <p className="text-sm text-gray-500 mt-1">Sales Campaign</p>
         </div>
@@ -90,7 +90,7 @@ export default function Sidebar() {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="text-xs text-gray-500">
-            © 2026 ScholarPass
+            © 2026 ScholarPASS
           </div>
         </div>
       </div>
