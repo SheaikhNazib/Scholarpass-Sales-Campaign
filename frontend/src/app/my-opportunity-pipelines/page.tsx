@@ -42,6 +42,38 @@ export default function MyOpportunityPipelines() {
     fetchLeads();
   }, [debouncedSearch]);
 
+  // Filter leads based on search term (client-side fallback)
+  const filteredLeads = leads.filter((lead) => {
+    if (!debouncedSearch) return true;
+    
+    const searchLower = debouncedSearch.toLowerCase();
+    return (
+      lead.title?.toLowerCase().includes(searchLower) ||
+      lead.first_name?.toLowerCase().includes(searchLower) ||
+      lead.last_name?.toLowerCase().includes(searchLower) ||
+      lead.email?.toLowerCase().includes(searchLower) ||
+      lead.company_name?.toLowerCase().includes(searchLower) ||
+      lead.status_name?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleDelete = async (row: Lead) => {
+    if (confirm('Are you sure you want to delete this opportunity?')) {
+      try {
+        await leadActions.delete(row.id);
+        // Refresh the list after successful deletion
+        const response = await leadActions.getMy({
+          per_page: 100,
+          search: debouncedSearch || undefined,
+        });
+        setLeads(response || []);
+      } catch (error) {
+        console.error('Failed to delete lead:', error);
+        alert('Failed to delete the opportunity. Please try again.');
+      }
+    }
+  };
+
   const columns: Column<Lead>[] = [
     {
       key: 'title',
@@ -134,7 +166,10 @@ export default function MyOpportunityPipelines() {
           <h1 className="text-3xl font-bold text-gray-800">Sales Opportunities</h1>
           <p className="text-gray-600 mt-1">Manage your pending opportunities</p>
         </div>
-        <button className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+        <button 
+          onClick={() => window.location.href = '/my-opportunity-pipelines/add'}
+          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+        >
           <Plus className="w-5 h-5" />
           New Opportunity
         </button>
@@ -153,20 +188,19 @@ export default function MyOpportunityPipelines() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <Filter className="w-5 h-5" />
-            Filter
-          </button>
         </div>
       </div>
 
       {/* Pipeline List */}
       <TableArchive
-        data={leads}
+        data={filteredLeads}
         columns={columns}
         itemsPerPage={10}
         loading={loading}
-        onRowClick={(row) => console.log('Clicked:', row)}
+        onRowClick={(row) => window.location.href = `/my-opportunity-pipelines/${row.id}`}
+        onView={(row) => window.location.href = `/my-opportunity-pipelines/${row.id}`}
+        onEdit={(row) => window.location.href = `/my-opportunity-pipelines/${row.id}/edit`}
+        onDelete={handleDelete}
         emptyMessage="No sales opportunities found"
       />
     </div>

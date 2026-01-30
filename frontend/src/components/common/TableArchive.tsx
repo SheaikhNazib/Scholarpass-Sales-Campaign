@@ -8,14 +8,18 @@ import {
   ChevronsRight,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 export interface Column<T> {
   key: string;
   title: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (value: any, row: T, index: number) => React.ReactNode;
   width?: string;
 }
 
@@ -26,6 +30,9 @@ interface TableArchiveProps<T> {
   loading?: boolean;
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
+  onView?: (row: T) => void;
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
 }
 
 export default function TableArchive<T extends Record<string, any>>({
@@ -34,11 +41,15 @@ export default function TableArchive<T extends Record<string, any>>({
   itemsPerPage = 10,
   loading = false,
   onRowClick,
-  emptyMessage = 'No data available'
+  emptyMessage = 'No data available',
+  onView,
+  onEdit,
+  onDelete
 }: TableArchiveProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
   // Sorting logic
   const sortedData = [...data].sort((a, b) => {
@@ -58,6 +69,70 @@ export default function TableArchive<T extends Record<string, any>>({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, endIndex);
+
+  const hasActions = onView || onEdit || onDelete;
+  const actionsColumn: Column<T> = {
+    key: 'actions',
+    title: 'Action',
+    sortable: false,
+    render: (value, row, index) => (
+      <div className="relative">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenMenuIndex(openMenuIndex === index ? null : index);
+          }}
+          className="p-1 rounded hover:bg-gray-100"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+        {openMenuIndex === index && (
+          <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg z-10">
+            {onView && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView(row);
+                  setOpenMenuIndex(null);
+                }}
+                className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                <Eye className="w-4 h-4" />
+                View
+              </button>
+            )}
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(row);
+                  setOpenMenuIndex(null);
+                }}
+                className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(row);
+                  setOpenMenuIndex(null);
+                }}
+                className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  };
+  const allColumns = hasActions ? [...columns, actionsColumn] : columns;
 
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
@@ -98,7 +173,7 @@ export default function TableArchive<T extends Record<string, any>>({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {columns.map((column) => (
+              {allColumns.map((column) => (
                 <th
                   key={column.key}
                   className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
@@ -118,7 +193,7 @@ export default function TableArchive<T extends Record<string, any>>({
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={allColumns.length} className="px-6 py-12 text-center text-gray-500">
                   {emptyMessage}
                 </td>
               </tr>
@@ -127,12 +202,15 @@ export default function TableArchive<T extends Record<string, any>>({
                 <tr
                   key={rowIndex}
                   className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
-                  onClick={() => onRowClick?.(row)}
+                  onClick={() => {
+                    onRowClick?.(row);
+                    setOpenMenuIndex(null);
+                  }}
                 >
-                  {columns.map((column) => (
+                  {allColumns.map((column) => (
                     <td key={column.key} className="px-6 py-4 whitespace-nowrap">
                       {column.render 
-                        ? column.render(row[column.key], row)
+                        ? column.render(row[column.key], row, rowIndex)
                         : <span className="text-sm text-gray-900">{row[column.key]}</span>
                       }
                     </td>

@@ -97,7 +97,7 @@ class CRMSalesLeadRepository(ICRMSalesLeadRepository):
         return self.db.query(CRMSalesLeadOpportunity).filter(CRMSalesLeadOpportunity.id == lead_id).first()
 
     def list_all(self, limit: int = 20) -> List[CRMSalesLeadOpportunity]:
-        return self.db.query(CRMSalesLeadOpportunity).order_by(CRMSalesLeadOpportunity.created_at.desc()).limit(limit).all()
+        return self.db.query(CRMSalesLeadOpportunity).limit(limit).all()
 
     def list_by_campaign(self, campaign_id: int, limit: int = 20) -> List[CRMSalesLeadOpportunity]:
         return self.db.query(CRMSalesLeadOpportunity).filter(

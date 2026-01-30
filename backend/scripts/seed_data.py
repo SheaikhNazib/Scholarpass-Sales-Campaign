@@ -7,11 +7,14 @@ This script populates the database with initial data for sales-related entities.
 import sys
 import os
 from datetime import datetime, timedelta
+from pathlib import Path
+
+# Add parent directory to Python path
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+sys.path.insert(0, str(parent_dir))
+
 from sqlalchemy.orm import Session
-
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-
 from src.infrastructure.database import SessionLocal
 from src.modules.sales.models import (
     CRMSalesLeadSourceChannel,
@@ -142,7 +145,7 @@ def seed_campaigns(db: Session):
             "campaign_budget": 100000.00,
             "spent_amount": 0.00,
             "status_open_closed": True,
-            "primary_manager_user_id": 1,  # Assuming user exists
+            "primary_manager_user_id": None,
         },
         {
             "name": "Corporate Training Initiative",
@@ -158,7 +161,7 @@ def seed_campaigns(db: Session):
             "campaign_budget": 150000.00,
             "spent_amount": 0.00,
             "status_open_closed": True,
-            "primary_manager_user_id": 1,
+            "primary_manager_user_id": None,
         },
     ]
 
@@ -187,8 +190,8 @@ def seed_leads(db: Session):
             "crm_sales_campaign_id": 1,
             "crm_sales_lead_source_channel_id": 1,
             "crm_sales_lead_status_id": 2,  # Contacted
-            "lead_owner_user_id": 1,
-            "user_id": 1,
+            "lead_owner_user_id": None,
+            "user_id": None,
         },
         {
             "title": "Ms.",
@@ -205,8 +208,8 @@ def seed_leads(db: Session):
             "crm_sales_campaign_id": 2,
             "crm_sales_lead_source_channel_id": 3,  # Referral
             "crm_sales_lead_status_id": 3,  # Qualified
-            "lead_owner_user_id": 1,
-            "user_id": 1,
+            "lead_owner_user_id": None,
+            "user_id": None,
         },
         {
             "title": "Prof.",
@@ -223,8 +226,8 @@ def seed_leads(db: Session):
             "crm_sales_campaign_id": 1,
             "crm_sales_lead_source_channel_id": 5,  # Conference
             "crm_sales_lead_status_id": 1,  # New
-            "lead_owner_user_id": 1,
-            "user_id": 1,
+            "lead_owner_user_id": None,
+            "user_id": None,
         },
     ]
 
@@ -247,7 +250,7 @@ def seed_proposals(db: Session):
             "proposal_status_id": 2,  # Submitted
             "proposal_type_id": 1,  # Grant Application
             "proposal_template_id": 1,
-            "owner_user_id": 1,
+            "owner_user_id": None,
             "expected_response_date": datetime(2026, 4, 1),
             "submission_deadline": datetime(2026, 3, 15),
             "submitted_at": datetime(2026, 1, 30),
@@ -262,7 +265,7 @@ def seed_proposals(db: Session):
             "proposal_status_id": 3,  # Under Review
             "proposal_type_id": 2,  # Partnership Proposal
             "proposal_template_id": 2,
-            "owner_user_id": 1,
+            "owner_user_id": None,
             "expected_response_date": datetime(2026, 3, 15),
             "submission_deadline": datetime(2026, 2, 28),
             "submitted_at": datetime(2026, 2, 1),
@@ -320,7 +323,7 @@ def seed_proposal_submissions(db: Session):
             "submitted_at": datetime(2026, 1, 30),
             "status": "submitted",
             "response_status": "pending",
-            "created_by_user_id": 1,
+            "created_by_user_id": None,
         },
         {
             "proposal_id": 1,
@@ -329,7 +332,7 @@ def seed_proposal_submissions(db: Session):
             "submitted_at": datetime(2026, 1, 30),
             "status": "submitted",
             "response_status": "pending",
-            "created_by_user_id": 1,
+            "created_by_user_id": None,
         },
         {
             "proposal_id": 2,
@@ -339,7 +342,7 @@ def seed_proposal_submissions(db: Session):
             "status": "submitted",
             "response_status": "under_review",
             "response_date": datetime(2026, 2, 5),
-            "created_by_user_id": 1,
+            "created_by_user_id": None,
         },
     ]
 
