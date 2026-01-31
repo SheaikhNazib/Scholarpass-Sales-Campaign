@@ -73,41 +73,41 @@ export default function DashboardLayout({ children }: Props) {
   };
 
   const menuItems = [
-    {
-      label: "Profile",
-      icon: User,
-      onClick: () => {
-        router.push("/dashboard/profile");
-      },
-    },
-    {
-      label: "Account Security",
-      icon: Shield,
-      onClick: () => {
-        router.push("/dashboard/security");
-      },
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      onClick: () => {
-        router.push("/dashboard/settings");
-      },
-    },
-    {
-      label: "Notifications",
-      icon: Bell,
-      onClick: () => {
-        router.push("/dashboard/notifications");
-      },
-    },
-    {
-      label: "Billing",
-      icon: CreditCard,
-      onClick: () => {
-        router.push("/dashboard/billing");
-      },
-    },
+    // {
+    //   label: "Profile",
+    //   icon: User,
+    //   onClick: () => {
+    //     router.push("/dashboard/profile");
+    //   },
+    // },
+    // {
+    //   label: "Account Security",
+    //   icon: Shield,
+    //   onClick: () => {
+    //     router.push("/dashboard/security");
+    //   },
+    // },
+    // {
+    //   label: "Settings",
+    //   icon: Settings,
+    //   onClick: () => {
+    //     router.push("/dashboard/settings");
+    //   },
+    // },
+    // {
+    //   label: "Notifications",
+    //   icon: Bell,
+    //   onClick: () => {
+    //     router.push("/dashboard/notifications");
+    //   },
+    // },
+    // {
+    //   label: "Billing",
+    //   icon: CreditCard,
+    //   onClick: () => {
+    //     router.push("/dashboard/billing");
+    //   },
+    // },
   ];
 
   const handleLogout = async () => {
