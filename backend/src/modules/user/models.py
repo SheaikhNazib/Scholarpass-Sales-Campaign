@@ -1,4 +1,6 @@
+from typing import Optional
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, UniqueConstraint, Numeric, Index
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from src.infrastructure.database import Base
@@ -40,6 +42,13 @@ class AppUser(Base):
     created_by_user_id = Column(Integer, ForeignKey("app_users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    primary_role = relationship("AppRole", foreign_keys=[primary_role_id])
+
+    @property
+    def primary_role_name(self) -> Optional[str]:
+        return self.primary_role.name if self.primary_role else None
 
 class AppRole(Base):
     __tablename__ = "app_access_master_roles"

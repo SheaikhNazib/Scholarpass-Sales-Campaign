@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
 import { leadActions } from '@/actions/lead';
-import { LeadCreate } from '@/actions/lead/types';
+import { Lead, LeadUpdate } from '@/actions/lead/types';
 import { apiClient } from '@/lib/api-client';
 import { API_PATH } from '@constant/api-path';
-import { useAuth } from '@/hooks/useAuth';
 import { AutocompleteSelect } from '@/components/common/autocomplete-select';
 
 interface Campaign {
@@ -45,17 +44,20 @@ interface User {
   last_name: string;
 }
 
-export default function AddOpportunityPage() {
+export default function EditOpportunityPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const leadId = params.id as string;
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [formData, setFormData] = useState<LeadCreate>({
+  const [formData, setFormData] = useState<LeadUpdate>({
     title: '',
     first_name: '',
     last_name: '',
@@ -86,7 +88,9 @@ export default function AddOpportunityPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [campaignsRes, companiesRes, contactsRes, productsRes, currenciesRes, usersRes] = await Promise.all([
+        setLoading(true);
+        const [leadResponse, campaignsRes, companiesRes, contactsRes, productsRes, currenciesRes, usersRes] = await Promise.all([
+          leadActions.getById(Number(leadId)),
           apiClient.get<Campaign[]>(API_PATH.SALES.CAMPAIGNS.LIST),
           apiClient.get<Company[]>(API_PATH.CRM.COMPANIES.LIST),
           apiClient.get<Contact[]>(API_PATH.CRM.CONTACTS.LIST),
@@ -94,18 +98,57 @@ export default function AddOpportunityPage() {
           apiClient.get<Currency[]>(API_PATH.MASTER.CURRENCIES.LIST),
           apiClient.get<User[]>(API_PATH.AUTH.LIST_USERS),
         ]);
+        
         setCampaigns(campaignsRes || []);
         setCompanies(companiesRes || []);
         setContacts(contactsRes || []);
         setProducts(productsRes || []);
         setCurrencies(currenciesRes || []);
         setUsers(usersRes || []);
+        
+        // Populate form with existing lead data
+        setFormData({
+          title: leadResponse.title,
+          first_name: leadResponse.first_name || '',
+          last_name: leadResponse.last_name || '',
+          email: leadResponse.email || '',
+          phone: leadResponse.phone || '',
+          job_title: leadResponse.job_title || '',
+          description: leadResponse.description || '',
+          lead_score: leadResponse.lead_score,
+          expected_sales_amount: leadResponse.expected_sales_amount,
+          expected_closing_date: leadResponse.expected_closing_date 
+            ? leadResponse.expected_closing_date.split('T')[0] 
+            : '',
+          crm_sales_campaign_id: leadResponse.crm_sales_campaign_id,
+          crm_sales_lead_status_id: leadResponse.crm_sales_lead_status_id,
+          referral_code: leadResponse.referral_code || '',
+          referred_by_email: leadResponse.referred_by_email || '',
+          referred_by_phone: leadResponse.referred_by_phone || '',
+          lead_generation_link: leadResponse.lead_generation_link || '',
+          // zone_id: leadResponse.zone_id, // Commented out: No backend endpoint available
+          crm_contact_id: leadResponse.crm_contact_id,
+          crm_company_id: leadResponse.crm_company_id,
+          shop_product_id: leadResponse.shop_product_id,
+          // lms_course_id: leadResponse.lms_course_id, // Commented out: No backend endpoint available
+          // crm_sales_lead_source_channel_id: leadResponse.crm_sales_lead_source_channel_id, // Commented out: No backend endpoint available
+          lead_owner_user_id: leadResponse.lead_owner_user_id,
+          currency_id: leadResponse.currency_id,
+          is_app_user: leadResponse.is_app_user || false,
+        });
       } catch (error) {
         console.error('Failed to fetch data:', error);
+        alert('Failed to load opportunity details');
+        router.push('/opportunity-pipelines');
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+
+    if (leadId) {
+      fetchData();
+    }
+  }, [leadId, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -124,18 +167,12 @@ export default function AddOpportunityPage() {
       return;
     }
 
-    if (!user) {
-      alert('User not authenticated');
-      return;
-    }
-
     try {
-      setLoading(true);
+      setSaving(true);
       
       // Clean up the data - remove empty strings and convert to proper types
       const cleanedData: any = {
         title: formData.title,
-        user_id: user.id, // Set user_id from logged-in user
       };
       
       // Only include fields with actual values (not empty strings)
@@ -214,20 +251,31 @@ export default function AddOpportunityPage() {
       // Handle boolean
       cleanedData.is_app_user = formData.is_app_user || false;
       
-      await leadActions.create(cleanedData);
-      router.push('/my-opportunity-pipelines');
+      await leadActions.update(Number(leadId), cleanedData);
+      router.push(`/opportunity-pipelines/${leadId}`);
     } catch (error: any) {
-      console.error('Failed to create lead:', error);
+      console.error('Failed to update lead:', error);
       const errorMessage = error?.response?.data?.detail 
         ? (typeof error.response.data.detail === 'string' 
           ? error.response.data.detail 
           : JSON.stringify(error.response.data.detail))
-        : 'Failed to create opportunity. Please try again.';
+        : 'Failed to update opportunity. Please try again.';
       alert(errorMessage);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading opportunity...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -239,8 +287,8 @@ export default function AddOpportunityPage() {
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-800">Add New Opportunity</h1>
-        <p className="text-gray-600 mt-1">Create a new sales opportunity</p>
+        <h1 className="text-3xl font-bold text-gray-800">Edit Opportunity</h1>
+        <p className="text-gray-600 mt-1">Update sales opportunity details</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -676,17 +724,17 @@ export default function AddOpportunityPage() {
               type="button"
               onClick={() => router.back()}
               className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
-              disabled={loading}
+              disabled={saving}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="flex items-center gap-2 bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
             >
               <Save className="w-5 h-5" />
-              {loading ? 'Creating...' : 'Create Opportunity'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>

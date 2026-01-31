@@ -19,7 +19,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import useUserInfo from "@/hooks/useUserInfo";
-import { Bell, CreditCard, Settings, Shield, User, LogOut } from "lucide-react";
+import { Bell, CreditCard, Settings, Shield, User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -72,42 +72,46 @@ export default function DashboardLayout({ children }: Props) {
     lastLogin: 'Just now',
   };
 
-  const menuItems = [
-    {
-      label: "Profile",
-      icon: User,
-      onClick: () => {
-        router.push("/dashboard/profile");
-      },
-    },
-    {
-      label: "Account Security",
-      icon: Shield,
-      onClick: () => {
-        router.push("/dashboard/security");
-      },
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      onClick: () => {
-        router.push("/dashboard/settings");
-      },
-    },
-    {
-      label: "Notifications",
-      icon: Bell,
-      onClick: () => {
-        router.push("/dashboard/notifications");
-      },
-    },
-    {
-      label: "Billing",
-      icon: CreditCard,
-      onClick: () => {
-        router.push("/dashboard/billing");
-      },
-    },
+  const menuItems: Array<{
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+  }> = [
+    // {
+    //   label: "Profile",
+    //   icon: User,
+    //   onClick: () => {
+    //     router.push("/dashboard/profile");
+    //   },
+    // },
+    // {
+    //   label: "Account Security",
+    //   icon: Shield,
+    //   onClick: () => {
+    //     router.push("/dashboard/security");
+    //   },
+    // },
+    // {
+    //   label: "Settings",
+    //   icon: Settings,
+    //   onClick: () => {
+    //     router.push("/dashboard/settings");
+    //   },
+    // },
+    // {
+    //   label: "Notifications",
+    //   icon: Bell,
+    //   onClick: () => {
+    //     router.push("/dashboard/notifications");
+    //   },
+    // },
+    // {
+    //   label: "Billing",
+    //   icon: CreditCard,
+    //   onClick: () => {
+    //     router.push("/dashboard/billing");
+    //   },
+    // },
   ];
 
   const handleLogout = async () => {
@@ -122,11 +126,7 @@ export default function DashboardLayout({ children }: Props) {
         <SidebarInset className="flex flex-col h-full w-full">
           <header className="flex justify-between h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-gray-200 bg-white shadow-sm px-4">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 h-4"
-              />
+              <SidebarTrigger className="md:hidden" />
               <DashboardBreadcrumb />
             </div>
 

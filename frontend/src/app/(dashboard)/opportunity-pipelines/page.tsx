@@ -1,110 +1,209 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, Plus, Trash2 } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
-
-interface Pipeline {
-  id: number;
-  title: string;
-  stage: string;
-  value: number;
-  probability: number;
-  owner: string;
-  lastActivity: string;
-}
+import { leadActions, Lead } from '@/actions/lead';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function OpportunityPipelines() {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock data - replace with actual API call
-  const pipelines: Pipeline[] = [
-    {
-      id: 1,
-      title: 'ABC School District',
-      stage: 'Negotiation',
-      value: 50000,
-      probability: 75,
-      owner: 'John Doe',
-      lastActivity: '2 hours ago'
-    },
-    {
-      id: 2,
-      title: 'XYZ University',
-      stage: 'Proposal',
-      value: 125000,
-      probability: 60,
-      owner: 'Jane Smith',
-      lastActivity: '1 day ago'
-    },
-    {
-      id: 3,
-      title: 'Community College Network',
-      stage: 'Qualification',
-      value: 80000,
-      probability: 40,
-      owner: 'Mike Johnson',
-      lastActivity: '3 days ago'
-    },
-  ];
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
 
-  const columns: Column<Pipeline>[] = [
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch leads from API
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchLeads = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all leads without filtering by user
+        const response = await leadActions.getAll({
+          per_page: 100,
+          search: debouncedSearch || undefined,
+        });
+        
+        setLeads(response || []);
+      } catch (error) {
+        console.error('Failed to fetch leads:', error);
+        setLeads([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeads();
+  }, [debouncedSearch, isAuthenticated]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Filter leads based on search term (client-side fallback)
+  const filteredLeads = leads.filter((lead) => {
+    if (!debouncedSearch) return true;
+    
+    const searchLower = debouncedSearch.toLowerCase();
+    return (
+      lead.title?.toLowerCase().includes(searchLower) ||
+      lead.first_name?.toLowerCase().includes(searchLower) ||
+      lead.last_name?.toLowerCase().includes(searchLower) ||
+      lead.email?.toLowerCase().includes(searchLower) ||
+      lead.company_name?.toLowerCase().includes(searchLower) ||
+      lead.status_name?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleDeleteClick = (row: Lead) => {
+    setSelectedLead(row);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedLead) return;
+    
+    try {
+      setDeleting(true);
+      await leadActions.delete(selectedLead.id);
+      
+      // Refresh the list after successful deletion
+      const response = await leadActions.getAll({
+        per_page: 100,
+        search: debouncedSearch || undefined,
+      });
+      
+      setLeads(response || []);
+      setShowDeleteModal(false);
+      setSelectedLead(null);
+    } catch (error) {
+      console.error('Failed to delete lead:', error);
+      alert('Failed to delete the opportunity. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setSelectedLead(null);
+  };
+
+  const columns: Column<Lead>[] = [
     {
       key: 'title',
       title: 'Title',
       sortable: true,
       render: (value) => (
-        <div className="text-sm font-medium text-gray-900">{value}</div>
-      )
-    },
-    {
-      key: 'stage',
-      title: 'Stage',
-      sortable: true,
-      render: (value) => (
-        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-          {value}
-        </span>
-      )
-    },
-    {
-      key: 'value',
-      title: 'Value',
-      sortable: true,
-      render: (value) => (
-        <span className="text-sm text-gray-900">${value.toLocaleString()}</span>
-      )
-    },
-    {
-      key: 'probability',
-      title: 'Probability',
-      sortable: true,
-      render: (value) => (
-        <div className="flex items-center">
-          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-            <div 
-              className="bg-primary-600 h-2 rounded-full" 
-              style={{ width: `${value}%` }}
-            ></div>
-          </div>
-          <span className="text-sm text-gray-900">{value}%</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-gray-900">{value}</span>
         </div>
       )
     },
     {
-      key: 'owner',
-      title: 'Owner',
+      key: 'first_name',
+      title: 'Contact',
       sortable: true,
-      render: (value) => (
-        <span className="text-sm text-gray-900">{value}</span>
+      render: (value, item) => (
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-900">
+            {item.first_name && item.last_name 
+              ? `${item.first_name} ${item.last_name}` 
+              : item.first_name || item.last_name || 'N/A'}
+          </span>
+          <span className="text-xs text-gray-500">{item.email || 'No email'}</span>
+        </div>
       )
     },
     {
-      key: 'lastActivity',
-      title: 'Last Activity',
+      key: 'company_name',
+      title: 'Company',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-gray-500">{value}</span>
+        <span className="text-sm text-gray-900">{value || 'N/A'}</span>
+      )
+    },
+    {
+      key: 'status_name',
+      title: 'Status',
+      sortable: true,
+      render: (value) => (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+          {value || 'New'}
+        </span>
+      )
+    },
+    {
+      key: 'expected_sales_amount',
+      title: 'Exp. Value',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-gray-900">
+          {value ? `$${value.toLocaleString()}` : 'N/A'}
+        </span>
+      )
+    },
+    {
+      key: 'lead_score',
+      title: 'Score',
+      sortable: true,
+      render: (value) => {
+        const score = value || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-16 bg-gray-200 rounded-full h-1.5">
+              <div 
+                className={`h-1.5 rounded-full ${score >= 70 ? 'bg-green-500' : score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${score}%` }}
+              ></div>
+            </div>
+            <span className="text-xs text-gray-600">{score}</span>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'expected_closing_date',
+      title: 'Closing Date',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-gray-500">
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
+        </span>
       )
     }
   ];
@@ -116,14 +215,17 @@ export default function OpportunityPipelines() {
           <h1 className="text-3xl font-bold text-gray-800">Opportunity Pipeline List</h1>
           <p className="text-gray-600 mt-1">View all opportunities in the system</p>
         </div>
-        <button className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+        <button 
+          onClick={() => window.location.href = '/opportunity-pipelines/add'}
+          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+        >
           <Plus className="w-5 h-5" />
           New Opportunity
         </button>
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -135,21 +237,60 @@ export default function OpportunityPipelines() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <Filter className="w-5 h-5" />
-            Filter
-          </button>
         </div>
       </div>
 
       {/* Pipeline List */}
       <TableArchive
-        data={pipelines}
+        data={filteredLeads}
         columns={columns}
         itemsPerPage={10}
-        onRowClick={(row) => console.log('Clicked:', row)}
+        loading={loading}
+        onRowClick={(row) => window.location.href = `/opportunity-pipelines/${row.id}`}
+        onView={(row) => window.location.href = `/opportunity-pipelines/${row.id}`}
+        onEdit={(row) => window.location.href = `/opportunity-pipelines/${row.id}/edit`}
+        onDelete={handleDeleteClick}
         emptyMessage="No opportunities found"
       />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Opportunity</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete <span className="font-semibold">"{selectedLead.title}"</span>? 
+                This will permanently remove this opportunity and all associated data.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCancel}
+                  disabled={deleting}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Opportunity'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

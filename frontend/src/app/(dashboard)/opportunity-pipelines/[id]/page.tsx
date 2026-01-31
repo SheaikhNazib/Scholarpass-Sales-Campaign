@@ -75,7 +75,7 @@ export default function ViewOpportunityPage() {
       } catch (error) {
         console.error('Failed to fetch lead:', error);
         alert('Failed to load opportunity details');
-        router.push('/my-opportunity-pipelines');
+        router.push('/opportunity-pipelines');
       } finally {
         setLoading(false);
       }
@@ -95,7 +95,7 @@ export default function ViewOpportunityPage() {
       setDeleting(true);
       setShowDeleteModal(false);
       await leadActions.delete(Number(leadId));
-      router.push('/my-opportunity-pipelines');
+      router.push('/opportunity-pipelines');
     } catch (error) {
       console.error('Failed to delete lead:', error);
       alert('Failed to delete opportunity. Please try again.');
@@ -125,7 +125,7 @@ export default function ViewOpportunityPage() {
         <div className="text-center">
           <p className="text-gray-600">Opportunity not found</p>
           <button
-            onClick={() => router.push('/my-opportunity-pipelines')}
+            onClick={() => router.push('/opportunity-pipelines')}
             className="mt-4 text-primary-600 hover:text-primary-700"
           >
             Go back to list
@@ -183,7 +183,7 @@ export default function ViewOpportunityPage() {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => router.push(`/my-opportunity-pipelines/${leadId}/edit`)}
+              onClick={() => router.push(`/opportunity-pipelines/${leadId}/edit`)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Edit className="w-4 h-4" />

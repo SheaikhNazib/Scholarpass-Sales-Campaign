@@ -135,7 +135,7 @@ export default function AddOpportunityPage() {
       // Clean up the data - remove empty strings and convert to proper types
       const cleanedData: any = {
         title: formData.title,
-        user_id: user.id, // Set user_id from logged-in user
+        // user_id is not set for general opportunity pipelines (remains null)
       };
       
       // Only include fields with actual values (not empty strings)
@@ -215,7 +215,7 @@ export default function AddOpportunityPage() {
       cleanedData.is_app_user = formData.is_app_user || false;
       
       await leadActions.create(cleanedData);
-      router.push('/my-opportunity-pipelines');
+      router.push('/opportunity-pipelines');
     } catch (error: any) {
       console.error('Failed to create lead:', error);
       const errorMessage = error?.response?.data?.detail 
