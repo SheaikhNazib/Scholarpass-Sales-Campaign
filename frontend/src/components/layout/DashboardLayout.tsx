@@ -72,7 +72,11 @@ export default function DashboardLayout({ children }: Props) {
     lastLogin: 'Just now',
   };
 
-  const menuItems = [
+  const menuItems: Array<{
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+  }> = [
     // {
     //   label: "Profile",
     //   icon: User,

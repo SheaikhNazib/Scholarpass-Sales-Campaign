@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -92,9 +93,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <div className="flex h-full flex-col gap-4">
         {/* Header */}
         <div className="flex h-16 items-center border-b px-6">
-          <h1 className="text-xl font-bold text-primary-600">
-            ScholarPASS
-          </h1>
+          <Link href="/" className="flex items-center gap-3 cursor-pointer">
+            <Image
+              src="/logo.png"
+              alt="ScholarPASS Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
+            <h1 className="text-xl font-bold text-primary-600">
+              ScholarPASS
+            </h1>
+          </Link>
         </div>
 
         {/* Content */}

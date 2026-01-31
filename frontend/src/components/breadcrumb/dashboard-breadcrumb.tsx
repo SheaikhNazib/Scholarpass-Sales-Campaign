@@ -13,8 +13,8 @@ export function DashboardBreadcrumb() {
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
         <li className="inline-flex items-center">
           <Link href="/" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-            <Home className="w-4 h-4 mr-2" />
-            Dashboard
+            <Home className="w-4 h-4 mr-2 mb-1" />
+            <span className="self-center">Dashboard</span>
           </Link>
         </li>
         {segments.map((segment, index) => {
