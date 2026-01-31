@@ -8,6 +8,7 @@ export interface User {
   email_confirmed: boolean;
   created_at: string;
   primary_role_id?: number;
+  primary_role_name?: string | null;
   profile_picture_url?: string | null;
 }
 

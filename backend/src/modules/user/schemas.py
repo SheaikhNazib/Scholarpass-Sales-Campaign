@@ -21,6 +21,8 @@ class UserResponse(BaseModel):
     last_name: Optional[str]
     active_or_archive: bool
     email_confirmed: bool
+    primary_role_id: Optional[int]
+    primary_role_name: Optional[str] = None
     created_at: datetime
 
     class Config:

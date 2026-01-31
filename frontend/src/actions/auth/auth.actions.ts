@@ -12,7 +12,7 @@ export const authActions = {
       API_PATH.AUTH.LOGIN,
       credentials
     );
-    
+
     // Store token
     if (response.access_token) {
       apiClient.setToken(response.access_token);
@@ -20,7 +20,7 @@ export const authActions = {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
     }
-    
+
     return response;
   },
 
@@ -37,6 +37,13 @@ export const authActions = {
    */
   async getUser(userId: number): Promise<User> {
     return apiClient.get<User>(API_PATH.AUTH.GET_USER(userId.toString()));
+  },
+
+  /**
+   * List all users
+   */
+  async listUsers(): Promise<User[]> {
+    return apiClient.get<User[]>(API_PATH.AUTH.LIST_USERS);
   },
 
   /**

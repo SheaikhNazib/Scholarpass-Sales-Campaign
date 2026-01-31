@@ -67,10 +67,18 @@ class RoleService:
         return self.role_repo.list_all()
 
 class UserRoleService:
-    def __init__(self, user_role_repo: UserRoleRepository):
+    def __init__(self, user_role_repo: UserRoleRepository, db: Session):
         self.user_role_repo = user_role_repo
+        self.db = db
 
     def assign_role(self, user_id: int, role_id: int, assigned_by: int):
+        # Update primary role on user
+        from src.modules.user.models import AppUser
+        user = self.db.query(AppUser).filter(AppUser.id == user_id).first()
+        if user:
+            user.primary_role_id = role_id
+            self.db.commit()
+
         user_role = UserRole(
             user_id=user_id,
             role_id=role_id,
