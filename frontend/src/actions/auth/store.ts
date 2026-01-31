@@ -1,8 +1,11 @@
 export const useAuthStore = () => {
     return {
-        logout: () => {
+        logout: async () => {
             console.log('Logging out...');
-            // In a real app, this would clear tokens and redirect
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_data');
+            }
         }
     }
 }

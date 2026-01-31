@@ -1,6 +1,8 @@
 "use client";
 
-import { useAuthStore } from "@/actions/auth/store";
+import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardBreadcrumb } from "@/components/breadcrumb/dashboard-breadcrumb";
 import { UserProfileDropdown } from "@/components/common/user-profile-dropdown";
@@ -17,10 +19,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import useUserInfo from "@/hooks/useUserInfo";
-import { Bell, CreditCard, Settings, Shield, User } from "lucide-react";
+import { Bell, CreditCard, Settings, Shield, User, LogOut } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React from "react";
 
 type Props = {
   children: React.ReactNode;
@@ -28,18 +28,50 @@ type Props = {
 
 export default function DashboardLayout({ children }: Props) {
   const router = useRouter();
-  const user = useUserInfo();
-  const { logout } = useAuthStore();
+  const pathname = usePathname();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const userInfo = useUserInfo();
 
+  // Check if we're on an auth page
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+  // Redirect to login when user is not authenticated and not on auth pages
+  React.useEffect(() => {
+    if (!isAuthPage && !isLoading && !isAuthenticated) {
+      router.push(`/login?redirect=${pathname}`);
+    }
+  }, [isAuthPage, isLoading, isAuthenticated, pathname, router]);
+
+  // If on auth page, just render children without sidebar
+  if (isAuthPage) {
+    return <div className="h-full">{children}</div>;
+  }
+
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated (and not loading), don't render layout
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Prefer authenticated user info when available
   const userData = {
-    name: user ? `${user.firstName} ${user.lastName}` : "No User",
-    email: user?.email || "no email",
-    avatar: user?.profilePicture || undefined,
-    role: "Super Admin",
-    lastLogin: "2 hours ago",
+    name: user ? `${(user as any).first_name || ''} ${(user as any).last_name || ''}`.trim() || (userInfo ? `${userInfo.firstName} ${userInfo.lastName}`.trim() : 'User') : (userInfo ? `${userInfo.firstName} ${userInfo.lastName}`.trim() : 'User'),
+    email: (user as any)?.email || userInfo?.email || 'no email',
+    avatar: (user as any)?.profile_picture_url || userInfo?.profilePicture || undefined,
+    role: (user as any)?.primary_role_id ? `role-${(user as any).primary_role_id}` : 'User',
+    lastLogin: 'Just now',
   };
 
-  // Menu items with their respective actions
   const menuItems = [
     {
       label: "Profile",
@@ -78,6 +110,11 @@ export default function DashboardLayout({ children }: Props) {
     },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   return (
     <div className="h-full">
       <SidebarProvider>
@@ -104,16 +141,15 @@ export default function DashboardLayout({ children }: Props) {
                       Quick Actions
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg rounded-xl"
-                  >
+                  <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg rounded-xl">
+                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
+                      <Link href="/my-campaigns">My Campaigns</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
+                      <Link href="/my-opportunity-pipelines">Opportunities</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
                       <Link href="/dashboard/create-task">Quick Task</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
-                      <Link href="/dashboard/create-task">Meeting</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
-                      <Link href="/dashboard/employee-attendance">Check In/Out</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -122,9 +158,7 @@ export default function DashboardLayout({ children }: Props) {
                 <UserProfileDropdown
                   user={userData}
                   menuItems={menuItems}
-                  onLogout={() => {
-                    logout();
-                  }}
+                  onLogout={handleLogout}
                 />
               </div>
             </div>

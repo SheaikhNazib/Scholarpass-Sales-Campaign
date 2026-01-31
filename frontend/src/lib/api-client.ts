@@ -6,12 +6,15 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    console.log('[API Client] Initializing with base URL:', API_BASE_URL);
+    
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
         'Content-Type': 'application/json',
       },
       timeout: 30000,
+      withCredentials: false, // Explicitly set to false for cross-origin
     });
 
     // Request interceptor
@@ -32,12 +35,17 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        // Log error for debugging
-        console.error('API Error:', {
+        // Log detailed error for debugging
+        console.error('[API Client] Error:', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
           url: error.config?.url,
           method: error.config?.method,
-          status: error.response?.status,
-          data: error.response?.data,
+          headers: error.response?.headers,
+          isNetwork: !error.response,
         });
 
         if (error.response?.status === 401) {
