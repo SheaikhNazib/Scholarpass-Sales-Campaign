@@ -19,7 +19,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import useUserInfo from "@/hooks/useUserInfo";
-import { Bell, CreditCard, Settings, Shield, User, LogOut } from "lucide-react";
+import { Bell, CreditCard, Settings, Shield, User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -126,6 +126,7 @@ export default function DashboardLayout({ children }: Props) {
         <SidebarInset className="flex flex-col h-full w-full">
           <header className="flex justify-between h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-white px-4">
             <div className="flex items-center gap-2">
+              <SidebarTrigger className="md:hidden" />
               <DashboardBreadcrumb />
             </div>
 
