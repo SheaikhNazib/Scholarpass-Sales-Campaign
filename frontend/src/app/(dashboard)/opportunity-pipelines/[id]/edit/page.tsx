@@ -1,25 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
 import { leadActions } from '@/actions/lead';
-import { LeadCreate } from '@/actions/lead/types';
+import { Lead, LeadUpdate } from '@/actions/lead/types';
 import { apiClient } from '@/lib/api-client';
 import { API_PATH } from '@constant/api-path';
-import { useAuth } from '@/hooks/useAuth';
 
 interface Campaign {
   id: number;
   name: string;
 }
 
-export default function AddOpportunityPage() {
+export default function EditOpportunityPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const leadId = params.id as string;
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [formData, setFormData] = useState<LeadCreate>({
+  const [formData, setFormData] = useState<LeadUpdate>({
     title: '',
     first_name: '',
     last_name: '',
@@ -27,24 +29,54 @@ export default function AddOpportunityPage() {
     phone: '',
     job_title: '',
     description: '',
-    lead_score: undefined,
-    expected_sales_amount: undefined,
+    lead_score: 0,
+    expected_sales_amount: 0,
     expected_closing_date: '',
     crm_sales_campaign_id: undefined,
     crm_sales_lead_status_id: undefined,
   });
 
   useEffect(() => {
-    const fetchCampaigns = async () => {
+    const fetchData = async () => {
       try {
-        const response = await apiClient.get<Campaign[]>(API_PATH.SALES.CAMPAIGNS.LIST);
-        setCampaigns(response || []);
+        setLoading(true);
+        const [leadResponse, campaignsResponse] = await Promise.all([
+          leadActions.getById(Number(leadId)),
+          apiClient.get<Campaign[]>(API_PATH.SALES.CAMPAIGNS.LIST)
+        ]);
+        
+        setCampaigns(campaignsResponse || []);
+        
+        // Populate form with existing lead data
+        setFormData({
+          title: leadResponse.title,
+          first_name: leadResponse.first_name || '',
+          last_name: leadResponse.last_name || '',
+          email: leadResponse.email || '',
+          phone: leadResponse.phone || '',
+          job_title: leadResponse.job_title || '',
+          description: leadResponse.description || '',
+          lead_score: leadResponse.lead_score || 0,
+          expected_sales_amount: leadResponse.expected_sales_amount || 0,
+          expected_closing_date: leadResponse.expected_closing_date 
+            ? leadResponse.expected_closing_date.split('T')[0] 
+            : '',
+          crm_sales_campaign_id: leadResponse.crm_sales_campaign_id,
+          crm_sales_lead_status_id: leadResponse.crm_sales_lead_status_id,
+        });
       } catch (error) {
-        console.error('Failed to fetch campaigns:', error);
+        console.error('Failed to fetch data:', error);
+        alert('Failed to load opportunity details');
+        router.push('/opportunity-pipelines');
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCampaigns();
-  }, []);
+
+    if (leadId) {
+      fetchData();
+    }
+  }, [leadId, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -63,68 +95,47 @@ export default function AddOpportunityPage() {
       return;
     }
 
-    if (!user) {
-      alert('User not authenticated');
-      return;
-    }
-
     try {
-      setLoading(true);
+      setSaving(true);
       
       // Clean up the data - remove empty strings and convert to proper types
       const cleanedData: any = {
         title: formData.title,
-        user_id: user.id, // Set user_id from logged-in user
       };
       
-      // Only include fields with actual values (not empty strings)
-      if (formData.first_name && formData.first_name.trim()) cleanedData.first_name = formData.first_name.trim();
-      if (formData.last_name && formData.last_name.trim()) cleanedData.last_name = formData.last_name.trim();
-      if (formData.email && formData.email.trim()) cleanedData.email = formData.email.trim();
-      if (formData.phone && formData.phone.trim()) cleanedData.phone = formData.phone.trim();
-      if (formData.job_title && formData.job_title.trim()) cleanedData.job_title = formData.job_title.trim();
-      if (formData.description && formData.description.trim()) cleanedData.description = formData.description.trim();
+      // Only include fields with actual values
+      if (formData.first_name) cleanedData.first_name = formData.first_name;
+      if (formData.last_name) cleanedData.last_name = formData.last_name;
+      if (formData.email) cleanedData.email = formData.email;
+      if (formData.phone) cleanedData.phone = formData.phone;
+      if (formData.job_title) cleanedData.job_title = formData.job_title;
+      if (formData.description) cleanedData.description = formData.description;
+      if (formData.lead_score !== undefined && formData.lead_score !== null) cleanedData.lead_score = Number(formData.lead_score);
+      if (formData.expected_sales_amount !== undefined && formData.expected_sales_amount !== null) cleanedData.expected_sales_amount = Number(formData.expected_sales_amount);
+      if (formData.expected_closing_date) cleanedData.expected_closing_date = formData.expected_closing_date + 'T00:00:00';
+      if (formData.crm_sales_campaign_id) cleanedData.crm_sales_campaign_id = Number(formData.crm_sales_campaign_id);
+      if (formData.crm_sales_lead_status_id) cleanedData.crm_sales_lead_status_id = Number(formData.crm_sales_lead_status_id);
       
-      // Handle numeric fields - only include if they have a valid value
-      if (formData.lead_score !== undefined && formData.lead_score !== null) {
-        const score = Number(formData.lead_score);
-        if (!isNaN(score)) cleanedData.lead_score = score;
-      }
-      if (formData.expected_sales_amount !== undefined && formData.expected_sales_amount !== null) {
-        const amount = Number(formData.expected_sales_amount);
-        if (!isNaN(amount)) cleanedData.expected_sales_amount = amount;
-      }
-      
-      // Handle date
-      if (formData.expected_closing_date && formData.expected_closing_date.trim()) {
-        // Convert date to datetime format (append time)
-        cleanedData.expected_closing_date = formData.expected_closing_date.trim() + 'T00:00:00';
-      }
-      
-      // Handle foreign keys
-      if (formData.crm_sales_campaign_id) {
-        const campaignId = Number(formData.crm_sales_campaign_id);
-        if (!isNaN(campaignId)) cleanedData.crm_sales_campaign_id = campaignId;
-      }
-      if (formData.crm_sales_lead_status_id) {
-        const statusId = Number(formData.crm_sales_lead_status_id);
-        if (!isNaN(statusId)) cleanedData.crm_sales_lead_status_id = statusId;
-      }
-      
-      await leadActions.create(cleanedData);
-      router.push('/my-opportunity-pipelines');
-    } catch (error: any) {
-      console.error('Failed to create lead:', error);
-      const errorMessage = error?.response?.data?.detail 
-        ? (typeof error.response.data.detail === 'string' 
-          ? error.response.data.detail 
-          : JSON.stringify(error.response.data.detail))
-        : 'Failed to create opportunity. Please try again.';
-      alert(errorMessage);
+      await leadActions.update(Number(leadId), cleanedData);
+      router.push(`/opportunity-pipelines/${leadId}`);
+    } catch (error) {
+      console.error('Failed to update lead:', error);
+      alert('Failed to update opportunity. Please try again.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading opportunity...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -136,8 +147,8 @@ export default function AddOpportunityPage() {
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-800">Add New Opportunity</h1>
-        <p className="text-gray-600 mt-1">Create a new sales opportunity</p>
+        <h1 className="text-3xl font-bold text-gray-800">Edit Opportunity</h1>
+        <p className="text-gray-600 mt-1">Update sales opportunity details</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -334,17 +345,17 @@ export default function AddOpportunityPage() {
             type="button"
             onClick={() => router.back()}
             className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={loading}
+            disabled={saving}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={saving}
             className="flex items-center gap-2 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-5 h-5" />
-            {loading ? 'Creating...' : 'Create Opportunity'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>

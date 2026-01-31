@@ -112,7 +112,7 @@ export default function AddOpportunityPage() {
       }
       
       await leadActions.create(cleanedData);
-      router.push('/my-opportunity-pipelines');
+      router.push('/opportunity-pipelines');
     } catch (error: any) {
       console.error('Failed to create lead:', error);
       const errorMessage = error?.response?.data?.detail 

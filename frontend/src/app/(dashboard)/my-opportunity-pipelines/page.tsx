@@ -12,7 +12,7 @@ export default function MyOpportunityPipelines() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function MyOpportunityPipelines() {
 
   // Fetch leads from API
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
     const fetchLeads = async () => {
       try {
@@ -42,7 +42,12 @@ export default function MyOpportunityPipelines() {
           search: debouncedSearch || undefined,
         });
         
-        setLeads(response || []);
+        // Filter leads where user_id matches the current user's id
+        const filteredByUser = (response || []).filter(
+          (lead) => lead.user_id === user.id
+        );
+        
+        setLeads(filteredByUser);
       } catch (error) {
         console.error('Failed to fetch leads:', error);
         setLeads([]);
@@ -52,7 +57,7 @@ export default function MyOpportunityPipelines() {
     };
 
     fetchLeads();
-  }, [debouncedSearch, isAuthenticated]);
+  }, [debouncedSearch, isAuthenticated, user]);
 
   if (authLoading) {
     return (
@@ -88,12 +93,21 @@ export default function MyOpportunityPipelines() {
     if (confirm('Are you sure you want to delete this opportunity?')) {
       try {
         await leadActions.delete(row.id);
+        
         // Refresh the list after successful deletion
+        if (!user) return;
+        
         const response = await leadActions.getMy({
           per_page: 100,
           search: debouncedSearch || undefined,
         });
-        setLeads(response || []);
+        
+        // Filter leads where user_id matches the current user's id
+        const filteredByUser = (response || []).filter(
+          (lead) => lead.user_id === user.id
+        );
+        
+        setLeads(filteredByUser);
       } catch (error) {
         console.error('Failed to delete lead:', error);
         alert('Failed to delete the opportunity. Please try again.');
