@@ -58,6 +58,10 @@ class ConnectTemplateService:
         templates = self.repo.list_by_category(category)
         return [ConnectTemplateSchema.from_orm(t) for t in templates]
 
+    def list_all_templates(self, limit: int = 100, published_only: bool = False) -> List[ConnectTemplateSchema]:
+        templates = self.repo.list_all(limit, published_only)
+        return [ConnectTemplateSchema.from_orm(t) for t in templates]
+
     def update_template(self, template_id: int, schema: ConnectTemplateSchema) -> Optional[ConnectTemplateSchema]:
         updated = self.repo.update(template_id, **schema.dict(exclude_unset=True))
         return ConnectTemplateSchema.from_orm(updated) if updated else None
@@ -80,6 +84,10 @@ class ConnectMessageService:
     def get_message(self, message_id: int) -> Optional[ConnectMessageSchema]:
         message = self.repo.get_by_id(message_id)
         return ConnectMessageSchema.from_orm(message) if message else None
+
+    def list_all_messages(self, limit: int = 100, skip: int = 0) -> List[ConnectMessageSchema]:
+        messages = self.repo.list_all(limit, skip)
+        return [ConnectMessageSchema.from_orm(m) for m in messages]
 
     def list_user_messages(self, user_id: int, limit: int = 20) -> List[ConnectMessageSchema]:
         messages = self.repo.list_by_user(user_id, limit)

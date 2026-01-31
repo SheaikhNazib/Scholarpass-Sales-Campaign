@@ -86,9 +86,17 @@ def delete_template(template_id: int, service: ConnectTemplateService = Depends(
     if not service.delete_template(template_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
 
+@router.get("/templates", response_model=list[ConnectTemplateSchema])
+def list_all_templates(limit: int = 100, published_only: bool = False, service: ConnectTemplateService = Depends(get_template_service)):
+    return service.list_all_templates(limit, published_only)
+
 @router.post("/messages", response_model=ConnectMessageSchema, status_code=status.HTTP_201_CREATED)
 def create_message(schema: ConnectMessageSchema, service: ConnectMessageService = Depends(get_message_service)):
     return service.create_message(schema)
+
+@router.get("/messages", response_model=list[ConnectMessageSchema])
+def list_messages(limit: int = 100, skip: int = 0, service: ConnectMessageService = Depends(get_message_service)):
+    return service.list_all_messages(limit, skip)
 
 @router.get("/messages/{message_id}", response_model=ConnectMessageSchema)
 def get_message(message_id: int, service: ConnectMessageService = Depends(get_message_service)):

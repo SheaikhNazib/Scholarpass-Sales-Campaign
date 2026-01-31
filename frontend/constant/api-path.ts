@@ -77,4 +77,37 @@ export const API_PATH = {
       LIST: "/api/master/currencies",
     },
   },
+  CONNECT: {
+    CHANNELS: {
+      LIST: "/api/connect/channels",
+      GET_BY_ID: (channel_id: string) => `/api/connect/channels/${channel_id}`,
+      CREATE: "/api/connect/channels",
+      UPDATE: (channel_id: string) => `/api/connect/channels/${channel_id}`,
+      DELETE: (channel_id: string) => `/api/connect/channels/${channel_id}`,
+    },
+    TEMPLATES: {
+      LIST_BY_TYPE: (template_type: string) => `/api/connect/templates/type/${template_type}`,
+      LIST_BY_CATEGORY: (category: string) => `/api/connect/templates/category/${category}`,
+      GET_BY_ID: (template_id: string) => `/api/connect/templates/${template_id}`,
+      CREATE: "/api/connect/templates",
+      UPDATE: (template_id: string) => `/api/connect/templates/${template_id}`,
+      DELETE: (template_id: string) => `/api/connect/templates/${template_id}`,
+    },
+    MESSAGES: {
+      CREATE: "/api/connect/messages",
+      LIST: "/api/connect/messages",
+      GET_BY_ID: (message_id: string) => `/api/connect/messages/${message_id}`,
+      LIST_BY_USER: (user_id: string) => `/api/connect/messages/user/${user_id}`,
+      LIST_BY_CONTACT: (contact_id: string) => `/api/connect/messages/contact/${contact_id}`,
+      LIST_BY_COMPANY: (company_id: string) => `/api/connect/messages/company/${company_id}`,
+      UPDATE: (message_id: string) => `/api/connect/messages/${message_id}`,
+      DELETE: (message_id: string) => `/api/connect/messages/${message_id}`,
+    },
+    CALLS: {
+      CREATE: "/api/connect/calls",
+      LIST: "/api/connect/calls",
+      GET_BY_ID: (call_id: string) => `/api/connect/calls/${call_id}`,
+      UPDATE: (call_id: string) => `/api/connect/calls/${call_id}`,
+    },
+  },
 };
