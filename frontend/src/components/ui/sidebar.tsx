@@ -27,7 +27,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
-      <div className="flex min-h-screen w-full bg-gray-100/40 dark:bg-gray-800/40">
+      <div className="flex min-h-screen w-full bg-gray-50">
         {/* Mobile overlay */}
         {open && (
           <div 
@@ -46,7 +46,7 @@ export function Sidebar({ className, children }: { className?: string; children?
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-10 overflow-y-auto border-r bg-white transition-all duration-300 ease-in-out dark:bg-gray-950",
+        "fixed inset-y-0 left-0 z-10 overflow-y-auto border-r bg-white transition-all duration-300 ease-in-out",
         // Mobile: show full width (w-64) when open, hide when closed
         open ? "translate-x-0 w-64" : "-translate-x-full w-64",
         // Desktop (md+): always visible, change width based on open state

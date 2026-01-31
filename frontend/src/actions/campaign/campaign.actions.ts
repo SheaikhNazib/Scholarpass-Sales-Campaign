@@ -8,10 +8,30 @@ import {
 
 export const campaignActions = {
   /**
-   * Get all campaigns
+   * Get all campaigns with optional filters
    */
-  async getAll(limit: number = 100): Promise<Campaign[]> {
-    const url = `${API_PATH.SALES.CAMPAIGNS.LIST}?limit=${limit}`;
+  async getAll(
+    limit: number = 100,
+    skip: number = 0,
+    filters?: {
+      search?: string;
+      status?: boolean;
+      primary_manager_user_id?: number;
+      start_date_from?: string;
+      start_date_to?: string;
+    }
+  ): Promise<Campaign[]> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    params.append('skip', skip.toString());
+    
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.status !== undefined) params.append('status', filters.status.toString());
+    if (filters?.primary_manager_user_id) params.append('primary_manager_user_id', filters.primary_manager_user_id.toString());
+    if (filters?.start_date_from) params.append('start_date_from', filters.start_date_from);
+    if (filters?.start_date_to) params.append('start_date_to', filters.start_date_to);
+    
+    const url = `${API_PATH.SALES.CAMPAIGNS.LIST}?${params.toString()}`;
     return apiClient.get<Campaign[]>(url);
   },
 

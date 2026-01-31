@@ -1,10 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Plus, X } from 'lucide-react';
+import { Search, Filter, Plus, X, FilterX } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
 import { campaignActions } from '@/actions/campaign';
 import { Campaign, CampaignCreate } from '@/types/campaign';
+
+interface CampaignFilters {
+  search: string;
+  status: string;
+  location: string;
+  budgetMin: string;
+  budgetMax: string;
+  revenueMin: string;
+  revenueMax: string;
+  dateFrom: string;
+  dateTo: string;
+  primary_manager_user_id: string;
+}
 
 export default function Campaigns() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,7 +25,20 @@ export default function Campaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [filters, setFilters] = useState<CampaignFilters>({
+    search: '',
+    status: '',
+    location: '',
+    budgetMin: '',
+    budgetMax: '',
+    revenueMin: '',
+    revenueMax: '',
+    dateFrom: '',
+    dateTo: '',
+    primary_manager_user_id: '',
+  });
   const [formData, setFormData] = useState<CampaignCreate>({
     name: '',
     description: '',
@@ -25,15 +51,39 @@ export default function Campaigns() {
     status_open_closed: true,
   });
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await campaignActions.getAll(100);
+      
+      const filterParams: any = {};
+      
+      // Add search filter
+      if (filters.search || searchTerm) {
+        filterParams.search = filters.search || searchTerm;
+      }
+      
+      // Add status filter
+      if (filters.status === 'open') {
+        filterParams.status = true;
+      } else if (filters.status === 'closed') {
+        filterParams.status = false;
+      }
+      
+      // Add date range filter
+      if (filters.dateFrom) {
+        filterParams.start_date_from = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        filterParams.start_date_to = filters.dateTo;
+      }
+      
+      // Add owner filter
+      if (filters.primary_manager_user_id) {
+        filterParams.primary_manager_user_id = parseInt(filters.primary_manager_user_id);
+      }
+      
+      const data = await campaignActions.getAll(100, 0, filterParams);
       setCampaigns(data || []);
     } catch (err: any) {
       let errorMsg = 'Failed to fetch campaigns';
@@ -53,6 +103,41 @@ export default function Campaigns() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const handleFilterChange = (key: keyof CampaignFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(prev => ({ ...prev, search: searchTerm }));
+    fetchCampaigns();
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      search: '',
+      status: '',
+      location: '',
+      budgetMin: '',
+      budgetMax: '',
+      revenueMin: '',
+      revenueMax: '',
+      dateFrom: '',
+      dateTo: '',
+      primary_manager_user_id: '',
+    });
+    // Fetch with cleared filters
+    setTimeout(() => fetchCampaigns(), 0);
+  };
+
+  const hasActiveFilters = filters.status || filters.location || filters.budgetMin || 
+    filters.budgetMax || filters.revenueMin || filters.revenueMax || filters.dateFrom || 
+    filters.dateTo || filters.primary_manager_user_id;
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,9 +175,36 @@ export default function Campaigns() {
     }
   };
 
-  const filteredCampaigns = campaigns.filter(campaign =>
-    campaign.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Apply client-side filters (for fields not supported by backend)
+  const filteredCampaigns = campaigns.filter(campaign => {
+    // Location filter
+    if (filters.location && campaign.location && 
+        !campaign.location.toLowerCase().includes(filters.location.toLowerCase())) {
+      return false;
+    }
+    
+    // Budget range filter
+    if (filters.budgetMin && campaign.campaign_budget && 
+        campaign.campaign_budget < parseFloat(filters.budgetMin)) {
+      return false;
+    }
+    if (filters.budgetMax && campaign.campaign_budget && 
+        campaign.campaign_budget > parseFloat(filters.budgetMax)) {
+      return false;
+    }
+    
+    // Revenue range filter
+    if (filters.revenueMin && campaign.projected_revenue && 
+        campaign.projected_revenue < parseFloat(filters.revenueMin)) {
+      return false;
+    }
+    if (filters.revenueMax && campaign.projected_revenue && 
+        campaign.projected_revenue > parseFloat(filters.revenueMax)) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const columns: Column<Campaign>[] = [
     {
@@ -177,26 +289,206 @@ export default function Campaigns() {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search and Filter */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search campaigns by name..."
+              placeholder="Search campaigns by name or description..."
               className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 text-gray-900 placeholder-gray-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
             />
           </div>
-          {/* Filter button commented out - not implemented yet
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={() => setFilterOpen(!filterOpen)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-sm ${
+              hasActiveFilters
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-md'
+                : 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+            }`}
+          >
             <Filter className="w-5 h-5" />
             Filter
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 bg-white text-blue-600 text-xs rounded-full font-bold">
+                {[filters.status, filters.location, filters.budgetMin, filters.budgetMax, 
+                  filters.revenueMin, filters.revenueMax, filters.dateFrom, filters.dateTo, 
+                  filters.primary_manager_user_id].filter(Boolean).length}
+              </span>
+            )}
           </button>
-          */}
         </div>
+
+        {/* Filter Panel */}
+        {filterOpen && (
+          <div className="mt-4 border-t-2 border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-gray-900">Advanced Filters</h3>
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 font-semibold hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                >
+                  <FilterX className="w-3 h-3" />
+                  Clear all
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                >
+                  <option value="">All Status</option>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              {/* Location Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  placeholder="Search by location"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                />
+              </div>
+
+              {/* Owner ID Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Owner ID
+                </label>
+                <input
+                  type="number"
+                  value={filters.primary_manager_user_id}
+                  onChange={(e) => handleFilterChange('primary_manager_user_id', e.target.value)}
+                  placeholder="Enter user ID"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                />
+              </div>
+
+              {/* Budget Range */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Min Budget ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.budgetMin}
+                    onChange={(e) => handleFilterChange('budgetMin', e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    step="100"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Max Budget ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.budgetMax}
+                    onChange={(e) => handleFilterChange('budgetMax', e.target.value)}
+                    placeholder="∞"
+                    min="0"
+                    step="100"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                  />
+                </div>
+              </div>
+
+              {/* Revenue Range */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Min Revenue ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.revenueMin}
+                    onChange={(e) => handleFilterChange('revenueMin', e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    step="100"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Max Revenue ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.revenueMax}
+                    onChange={(e) => handleFilterChange('revenueMax', e.target.value)}
+                    placeholder="∞"
+                    min="0"
+                    step="100"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Start Date From
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.dateFrom}
+                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Start Date To
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-200">
+              <button
+                onClick={handleApplyFilters}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-sm hover:shadow"
+              >
+                Apply Filters
+              </button>
+              <button
+                onClick={() => setFilterOpen(false)}
+                className="px-4 py-2.5 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loading State */}
@@ -231,13 +523,18 @@ export default function Campaigns() {
 
       {/* Campaign List */}
       {!loading && !error && filteredCampaigns.length > 0 && (
-        <TableArchive
-          data={filteredCampaigns}
-          columns={columns}
-          itemsPerPage={10}
-          onRowClick={(row) => console.log('Clicked:', row)}
-          emptyMessage="No campaigns found"
-        />
+        <>
+          <div className="mb-4 text-sm text-gray-600 font-medium">
+            Showing {filteredCampaigns.length} of {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}
+          </div>
+          <TableArchive
+            data={filteredCampaigns}
+            columns={columns}
+            itemsPerPage={10}
+            onRowClick={(row) => console.log('Clicked:', row)}
+            emptyMessage="No campaigns found"
+          />
+        </>
       )}
 
       {/* Empty State - No campaigns */}
