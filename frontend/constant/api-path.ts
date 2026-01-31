@@ -1,11 +1,20 @@
 // ============================================================================
 // API Path Constants
 // ============================================================================
-// This file contains sales API endpoint paths for the application.
-// Updated: Jan 30, 2026 - Sales APIs only
+// This file contains API endpoint paths for the application.
+// Updated: Jan 31, 2026 - Added User Authentication APIs
 // ============================================================================
 
 export const API_PATH = {
+  AUTH: {
+    REGISTER: "/api/v1/users/register",
+    LOGIN: "/api/v1/users/login",
+    GET_USER: (user_id: string) => `/api/v1/users/${user_id}`,
+    LIST_USERS: "/api/v1/users",
+    GET_ALL_ROLES: "/api/v1/users/roles/all",
+    ASSIGN_ROLE: (user_id: string, role_id: string) => `/api/v1/users/${user_id}/roles/${role_id}`,
+    REMOVE_ROLE: (user_id: string, role_id: string) => `/api/v1/users/${user_id}/roles/${role_id}`,
+  },
   SALES: {
     CAMPAIGNS: {
       CREATE: "/api/sales/campaigns",

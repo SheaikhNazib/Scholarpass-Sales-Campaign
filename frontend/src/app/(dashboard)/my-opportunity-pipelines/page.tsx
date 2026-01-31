@@ -4,12 +4,22 @@ import { useState, useEffect } from 'react';
 import { Search, Filter, Plus } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
 import { leadActions, Lead } from '@/actions/lead';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function MyOpportunityPipelines() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   // Debounce search term
   useEffect(() => {
@@ -22,6 +32,8 @@ export default function MyOpportunityPipelines() {
 
   // Fetch leads from API
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchLeads = async () => {
       try {
         setLoading(true);
@@ -40,7 +52,22 @@ export default function MyOpportunityPipelines() {
     };
 
     fetchLeads();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, isAuthenticated]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // Filter leads based on search term (client-side fallback)
   const filteredLeads = leads.filter((lead) => {

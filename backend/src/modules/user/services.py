@@ -27,7 +27,11 @@ class AuthService:
         return UserResponse.from_orm(created)
 
     def login(self, req: UserLoginRequest) -> TokenResponse:
+        # Allow login by username OR email for convenience
         user = self.user_repo.get_by_username(req.username)
+        if not user:
+            user = self.user_repo.get_by_email(req.username)
+
         if not user or not SecurityService.verify_password(req.password, user.password_hash):
             raise ValueError("Invalid credentials")
         
