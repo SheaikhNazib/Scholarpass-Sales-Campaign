@@ -39,8 +39,9 @@ export function Sidebar({ className, children }: { className?: string; children?
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-10 w-64 -translate-x-full overflow-y-auto border-r bg-white transition-transform duration-300 ease-in-out md:translate-x-0 dark:bg-gray-950",
-        !open && "md:-translate-x-full",
+        "fixed inset-y-0 left-0 z-10 overflow-y-auto border-r bg-white transition-all duration-300 ease-in-out md:translate-x-0 dark:bg-gray-950",
+        open ? "w-64" : "w-16",
+        "-translate-x-full md:translate-x-0",
         className
       )}
     >
@@ -55,7 +56,7 @@ export function SidebarInset({ className, children }: { className?: string; chil
     <div
       className={cn(
         "flex flex-col flex-1 transition-all duration-300 ease-in-out",
-        open ? "md:ml-64" : "md:ml-0",
+        open ? "md:ml-64" : "md:ml-16",
         className
       )}
     >

@@ -15,9 +15,11 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import {
   Sidebar,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from '@/hooks/useAuth';
 
@@ -63,6 +65,7 @@ const menuItems: MenuItem[] = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { open, toggleSidebar } = useSidebar();
   const [isAdminOpen, setIsAdminOpen] = React.useState(true);
 
   const isAdmin = user?.primary_role_name === 'Super Admin' || user?.username === 'superadmin';
@@ -92,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar {...props}>
       <div className="flex h-full flex-col gap-4">
         {/* Header */}
-        <div className="flex h-16 items-center border-b px-6">
+        <div className="flex h-16 items-center border-b px-6 justify-between">
           <Link href="/" className="flex items-center gap-3 cursor-pointer">
             <Image
               src="/logo.png"
@@ -101,10 +104,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               height={32}
               className="h-8 w-8"
             />
-            <h1 className="text-xl font-bold text-primary-600">
-              ScholarPASS
-            </h1>
+            {open && (
+              <h1 className="text-xl font-bold text-primary-600">
+                ScholarPASS
+              </h1>
+            )}
           </Link>
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+            title={open ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {open ? (
+              <ChevronLeft className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-gray-500" />
+            )}
+          </button>
         </div>
 
         {/* Content */}
@@ -121,18 +137,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <button
                       onClick={() => setIsAdminOpen(!isAdminOpen)}
                       className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-primary-600"
+                      title={item.title}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className="h-4 w-4" />
-                        {item.title}
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        {open && <span>{item.title}</span>}
                       </div>
-                      {isAdminOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
+                      {open && (
+                        isAdminOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )
                       )}
                     </button>
-                    {isAdminOpen && (
+                    {isAdminOpen && open && (
                       <div className="ml-4 grid gap-1 border-l pl-2">
                         {item.items?.map((subItem) => {
                           const SubIcon = subItem.icon;
@@ -143,8 +162,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               href={subItem.href}
                               className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary-600 ${isSubActive ? "bg-gray-100 text-primary-600" : "text-gray-500"
                                 }`}
+                              title={subItem.title}
                             >
-                              <SubIcon className="h-4 w-4" />
+                              <SubIcon className="h-4 w-4 flex-shrink-0" />
                               {subItem.title}
                             </Link>
                           );
@@ -161,9 +181,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   href={item.href!}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary-600 ${isActive ? "bg-gray-100 text-primary-600" : "text-gray-500"
                     }`}
+                  title={item.title}
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.title}
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  {open && <span>{item.title}</span>}
                 </Link>
               )
             })}
@@ -171,11 +192,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t">
-          <div className="text-xs text-gray-500">
-            © 2026 ScholarPASS
+        {open && (
+          <div className="p-4 border-t">
+            <div className="text-xs text-gray-500">
+              © 2026 ScholarPASS
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Sidebar>
   )
