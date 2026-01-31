@@ -28,8 +28,16 @@ export const connectActions = {
     return apiClient.get<ConnectMessage[]>(url);
   },
 
-  async createMessage(data: ConnectMessage): Promise<ConnectMessage> {
-    return apiClient.post<ConnectMessage>(API_PATH.CONNECT.MESSAGES.CREATE, data);
+  async createMessage(data: ConnectMessage): Promise<{
+    message: ConnectMessage;
+    delivery: {
+      success: boolean;
+      demo_mode: boolean;
+      error?: string;
+      message_sid?: string;
+    };
+  }> {
+    return apiClient.post(API_PATH.CONNECT.MESSAGES.CREATE, data);
   },
 
   async updateMessage(id: number, data: Partial<ConnectMessage>): Promise<ConnectMessage> {
