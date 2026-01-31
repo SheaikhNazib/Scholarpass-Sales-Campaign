@@ -56,4 +56,25 @@ export const API_PATH = {
       },
     },
   },
+  CRM: {
+    COMPANIES: {
+      LIST: "/api/crm/companies",
+      GET_BY_ID: (company_id: string) => `/api/crm/companies/${company_id}`,
+    },
+    CONTACTS: {
+      LIST: "/api/crm/contacts",
+      GET_BY_ID: (contact_id: string) => `/api/crm/contacts/${contact_id}`,
+    },
+  },
+  SHOP: {
+    PRODUCTS: {
+      LIST: "/api/shop/products",
+      GET_BY_ID: (product_id: string) => `/api/shop/products/${product_id}`,
+    },
+  },
+  MASTER: {
+    CURRENCIES: {
+      LIST: "/api/master/currencies",
+    },
+  },
 };

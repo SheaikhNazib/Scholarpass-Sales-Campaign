@@ -15,13 +15,13 @@ export interface Lead {
   expected_sales_amount?: number;
   expected_closing_date?: string;
   created_date?: string;
-  zone_id?: number;
+  // zone_id?: number; // Commented out: No backend endpoint available
   crm_sales_campaign_id?: number;
   crm_contact_id?: number;
   crm_company_id?: number;
   shop_product_id?: number;
-  lms_course_id?: number;
-  crm_sales_lead_source_channel_id?: number;
+  // lms_course_id?: number; // Commented out: No backend endpoint available
+  // crm_sales_lead_source_channel_id?: number; // Commented out: No backend endpoint available
   crm_sales_lead_status_id?: number;
   lead_owner_user_id?: number;
   currency_id?: number;
@@ -84,8 +84,8 @@ export interface LeadUpdate {
   crm_contact_id?: number;
   crm_company_id?: number;
   shop_product_id?: number;
-  lms_course_id?: number;
-  crm_sales_lead_source_channel_id?: number;
+  // lms_course_id?: number; // Commented out: No backend endpoint available
+  // crm_sales_lead_source_channel_id?: number; // Commented out: No backend endpoint available
   crm_sales_lead_status_id?: number;
   lead_owner_user_id?: number;
   currency_id?: number;
