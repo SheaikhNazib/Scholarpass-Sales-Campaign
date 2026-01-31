@@ -68,8 +68,10 @@ export function UserProfileDropdown({ user, menuItems, onLogout }: UserProfileDr
         })}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span className="flex items-center">
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

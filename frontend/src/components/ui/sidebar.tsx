@@ -28,6 +28,13 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   return (
     <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
       <div className="flex min-h-screen w-full bg-gray-100/40 dark:bg-gray-800/40">
+        {/* Mobile overlay */}
+        {open && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-[5] md:hidden"
+            onClick={toggleSidebar}
+          />
+        )}
         {children}
       </div>
     </SidebarContext.Provider>
@@ -39,8 +46,12 @@ export function Sidebar({ className, children }: { className?: string; children?
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-10 w-64 -translate-x-full overflow-y-auto border-r bg-white transition-transform duration-300 ease-in-out md:translate-x-0 dark:bg-gray-950",
-        !open && "md:-translate-x-full",
+        "fixed inset-y-0 left-0 z-10 overflow-y-auto border-r bg-white transition-all duration-300 ease-in-out dark:bg-gray-950",
+        // Mobile: show full width (w-64) when open, hide when closed
+        open ? "translate-x-0 w-64" : "-translate-x-full w-64",
+        // Desktop (md+): always visible, change width based on open state
+        "md:translate-x-0",
+        open ? "md:w-64" : "md:w-16",
         className
       )}
     >
@@ -55,7 +66,9 @@ export function SidebarInset({ className, children }: { className?: string; chil
     <div
       className={cn(
         "flex flex-col flex-1 transition-all duration-300 ease-in-out",
-        open ? "md:ml-64" : "md:ml-0",
+        // Mobile: no margin (sidebar overlays)
+        // Desktop (md+): margin based on sidebar state
+        open ? "md:ml-64" : "md:ml-16",
         className
       )}
     >
