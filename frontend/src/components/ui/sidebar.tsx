@@ -27,7 +27,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
-      <div className="flex min-h-screen w-full bg-gray-100/40 dark:bg-gray-800/40">
+      <div className="flex min-h-screen w-full bg-gradient-to-br from-slate-50 to-gray-50">
         {children}
       </div>
     </SidebarContext.Provider>
@@ -39,7 +39,7 @@ export function Sidebar({ className, children }: { className?: string; children?
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-10 w-64 -translate-x-full overflow-y-auto border-r bg-white transition-transform duration-300 ease-in-out md:translate-x-0 dark:bg-gray-950",
+        "fixed inset-y-0 left-0 z-10 w-64 -translate-x-full overflow-y-auto border-r border-gray-200 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-transform duration-300 ease-in-out md:translate-x-0",
         !open && "md:-translate-x-full",
         className
       )}
@@ -69,7 +69,7 @@ export function SidebarTrigger({ className }: { className?: string }) {
   return (
     <button
       onClick={toggleSidebar}
-      className={cn("p-2 rounded-md hover:bg-gray-100", className)}
+      className={cn("p-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150", className)}
     >
       <PanelLeft className="w-5 h-5" />
       <span className="sr-only">Toggle Sidebar</span>

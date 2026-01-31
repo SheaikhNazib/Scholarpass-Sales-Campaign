@@ -32,6 +32,14 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Log error for debugging
+        console.error('API Error:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+
         if (error.response?.status === 401) {
           // Handle unauthorized access
           this.removeToken();
