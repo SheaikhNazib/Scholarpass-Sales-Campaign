@@ -43,8 +43,25 @@ def get_campaign(campaign_id: int, service: CRMSalesCampaignService = Depends(ge
     return campaign
 
 @router.get("/campaigns", response_model=list[CRMSalesCampaignSchema])
-def list_campaigns(limit: int = 20, service: CRMSalesCampaignService = Depends(get_campaign_service)):
-    return service.list_campaigns(limit)
+def list_campaigns(
+    limit: int = 100,
+    skip: int = 0,
+    search: str = None,
+    status: bool = None,
+    primary_manager_user_id: int = None,
+    start_date_from: str = None,
+    start_date_to: str = None,
+    service: CRMSalesCampaignService = Depends(get_campaign_service)
+):
+    return service.list_campaigns(
+        limit=limit,
+        skip=skip,
+        search=search,
+        status=status,
+        primary_manager_user_id=primary_manager_user_id,
+        start_date_from=start_date_from,
+        start_date_to=start_date_to
+    )
 
 @router.get("/campaigns/active", response_model=list[CRMSalesCampaignSchema])
 def list_active_campaigns(limit: int = 20, service: CRMSalesCampaignService = Depends(get_campaign_service)):

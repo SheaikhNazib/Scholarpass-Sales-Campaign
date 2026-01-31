@@ -25,8 +25,25 @@ class CRMSalesCampaignService:
         campaign = self.repo.get_by_id(campaign_id)
         return CRMSalesCampaignSchema.from_orm(campaign) if campaign else None
 
-    def list_campaigns(self, limit: int = 20) -> List[CRMSalesCampaignSchema]:
-        campaigns = self.repo.list_all(limit)
+    def list_campaigns(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        search: str = None,
+        status: bool = None,
+        primary_manager_user_id: int = None,
+        start_date_from: str = None,
+        start_date_to: str = None
+    ) -> List[CRMSalesCampaignSchema]:
+        campaigns = self.repo.list_all(
+            limit=limit,
+            skip=skip,
+            search=search,
+            status=status,
+            primary_manager_user_id=primary_manager_user_id,
+            start_date_from=start_date_from,
+            start_date_to=start_date_to
+        )
         return [CRMSalesCampaignSchema.from_orm(c) for c in campaigns]
 
     def list_active_campaigns(self, limit: int = 20) -> List[CRMSalesCampaignSchema]:

@@ -1,40 +1,53 @@
 export interface Campaign {
   id: number;
   name: string;
-  status: string;
-  type: string;
-  start_date: string;
-  end_date: string;
-  budget: number;
-  leads: number;
-  owner: string;
-  owner_id?: number;
   description?: string;
-  target_audience?: string;
+  location?: string;
+  start_date?: string;
+  end_date?: string;
+  duration?: string;
+  projected_revenue?: number;
+  revenue_earned?: number;
+  projected_sales?: number;
+  number_of_sales?: number;
+  campaign_budget?: number;
+  spent_amount?: number;
+  status_open_closed?: boolean;
+  primary_manager_user_id?: number;
   created_at?: string;
   updated_at?: string;
+  deleted_at?: string;
 }
 
 export interface CampaignCreate {
   name: string;
-  status: string;
-  type: string;
-  start_date: string;
-  end_date: string;
-  budget: number;
   description?: string;
-  target_audience?: string;
+  location?: string;
+  start_date?: string;
+  end_date?: string;
+  duration?: string;
+  projected_revenue?: number;
+  projected_sales?: number;
+  campaign_budget?: number;
+  status_open_closed?: boolean;
+  primary_manager_user_id?: number;
 }
 
 export interface CampaignUpdate {
   name?: string;
-  status?: string;
-  type?: string;
+  description?: string;
+  location?: string;
   start_date?: string;
   end_date?: string;
-  budget?: number;
-  description?: string;
-  target_audience?: string;
+  duration?: string;
+  projected_revenue?: number;
+  revenue_earned?: number;
+  projected_sales?: number;
+  number_of_sales?: number;
+  campaign_budget?: number;
+  spent_amount?: number;
+  status_open_closed?: boolean;
+  primary_manager_user_id?: number;
 }
 
 export type CampaignStatus = 

@@ -16,6 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  Mail,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -60,6 +62,22 @@ const menuItems: MenuItem[] = [
     href: '/campaigns',
     icon: Megaphone,
   },
+  {
+    title: 'Connect',
+    icon: Mail,
+    items: [
+      {
+        title: 'Messages',
+        href: '/messages',
+        icon: Mail,
+      },
+      {
+        title: 'Templates',
+        href: '/templates',
+        icon: FileText,
+      },
+    ],
+  },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -67,6 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const { open, toggleSidebar } = useSidebar();
   const [isAdminOpen, setIsAdminOpen] = React.useState(true);
+  const [isConnectOpen, setIsConnectOpen] = React.useState(true);
 
   const isAdmin = user?.primary_role_name === 'Super Admin' || user?.username === 'superadmin';
 
@@ -93,7 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar {...props}>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col">
         {/* Header */}
         <div className="flex h-16 items-center border-b px-6 justify-between">
           <Link href="/" className="flex items-center gap-3 cursor-pointer">
@@ -132,10 +151,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const isActive = item.href ? pathname === item.href : false;
 
               if (hasSubItems) {
+                // Determine which state to use based on the item title
+                const isOpen = item.title === 'Admin Settings' ? isAdminOpen : isConnectOpen;
+                const setIsOpen = item.title === 'Admin Settings' ? setIsAdminOpen : setIsConnectOpen;
+                
                 return (
                   <div key={item.title} className="grid gap-1">
                     <button
-                      onClick={() => setIsAdminOpen(!isAdminOpen)}
+                      onClick={() => setIsOpen(!isOpen)}
                       className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-primary-600"
                       title={item.title}
                     >
@@ -144,14 +167,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {open && <span>{item.title}</span>}
                       </div>
                       {open && (
-                        isAdminOpen ? (
+                        isOpen ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
                           <ChevronRight className="h-4 w-4" />
                         )
                       )}
                     </button>
-                    {isAdminOpen && open && (
+                    {isOpen && open && (
                       <div className="ml-4 grid gap-1 border-l pl-2">
                         {item.items?.map((subItem) => {
                           const SubIcon = subItem.icon;

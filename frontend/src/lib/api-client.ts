@@ -35,6 +35,7 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Log detailed error for debugging
         console.error('[API Client] Error:', {
           message: error.message,
           code: error.code,

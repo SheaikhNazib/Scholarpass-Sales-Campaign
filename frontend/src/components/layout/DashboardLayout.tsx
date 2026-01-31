@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: Props) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="flex flex-col h-full w-full">
-          <header className="flex justify-between h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-white px-4">
+          <header className="flex justify-between h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-gray-200 bg-white shadow-sm px-4">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="md:hidden" />
               <DashboardBreadcrumb />
@@ -136,17 +136,20 @@ export default function DashboardLayout({ children }: Props) {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="font-semibold border-0 shadow-none bg-transparent px-4 py-2 rounded cursor-pointer focus:outline-none text-sm text-gray-700 hover:bg-gray-100"
+                      className="font-semibold border-0 shadow-none bg-transparent px-4 py-2 rounded-lg cursor-pointer focus:outline-none text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
                     >
                       Quick Actions
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem asChild>
+                  <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg rounded-xl">
+                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
                       <Link href="/my-campaigns">My Campaigns</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
                       <Link href="/my-opportunity-pipelines">Opportunities</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700 cursor-pointer">
+                      <Link href="/dashboard/create-task">Quick Task</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -160,8 +163,8 @@ export default function DashboardLayout({ children }: Props) {
               </div>
             </div>
           </header>
-          <div className="flex flex-1 flex-col min-h-0 bg-gray-50/50">
-            <div className="overflow-y-auto overflow-x-hidden flex-1 px-4 py-4">
+          <div className="flex flex-1 flex-col min-h-0 bg-gradient-to-br from-slate-50 to-gray-50">
+            <div className="overflow-y-auto overflow-x-hidden flex-1 px-6 py-6">
               {children}
             </div>
           </div>

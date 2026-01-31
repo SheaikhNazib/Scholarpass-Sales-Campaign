@@ -9,7 +9,16 @@ from src.modules.sales.models import (
 class ICRMSalesCampaignRepository(Protocol):
     def create(self, campaign: CRMSalesCampaign) -> CRMSalesCampaign: ...
     def get_by_id(self, campaign_id: int) -> Optional[CRMSalesCampaign]: ...
-    def list_all(self, limit: int = 20) -> List[CRMSalesCampaign]: ...
+    def list_all(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        search: str = None,
+        status: bool = None,
+        primary_manager_user_id: int = None,
+        start_date_from: str = None,
+        start_date_to: str = None
+    ) -> List[CRMSalesCampaign]: ...
     def list_active(self, limit: int = 20) -> List[CRMSalesCampaign]: ...
     def update(self, campaign_id: int, **kwargs) -> Optional[CRMSalesCampaign]: ...
     def delete(self, campaign_id: int) -> bool: ...
@@ -58,8 +67,53 @@ class CRMSalesCampaignRepository(ICRMSalesCampaignRepository):
     def get_by_id(self, campaign_id: int) -> Optional[CRMSalesCampaign]:
         return self.db.query(CRMSalesCampaign).filter(CRMSalesCampaign.id == campaign_id).first()
 
-    def list_all(self, limit: int = 20) -> List[CRMSalesCampaign]:
-        return self.db.query(CRMSalesCampaign).order_by(CRMSalesCampaign.created_at.desc()).limit(limit).all()
+    def list_all(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        search: str = None,
+        status: bool = None,
+        primary_manager_user_id: int = None,
+        start_date_from: str = None,
+        start_date_to: str = None
+    ) -> List[CRMSalesCampaign]:
+        query = self.db.query(CRMSalesCampaign)
+        
+        # Apply search filter (search in name and description)
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.filter(
+                (CRMSalesCampaign.name.ilike(search_pattern)) |
+                (CRMSalesCampaign.description.ilike(search_pattern))
+            )
+        
+        # Apply status filter
+        if status is not None:
+            query = query.filter(CRMSalesCampaign.status_open_closed == status)
+        
+        # Apply owner filter
+        if primary_manager_user_id is not None:
+            query = query.filter(CRMSalesCampaign.primary_manager_user_id == primary_manager_user_id)
+        
+        # Apply date range filters
+        if start_date_from:
+            try:
+                from datetime import datetime
+                date_from = datetime.fromisoformat(start_date_from.replace('Z', '+00:00'))
+                query = query.filter(CRMSalesCampaign.start_date >= date_from)
+            except ValueError:
+                pass
+        
+        if start_date_to:
+            try:
+                from datetime import datetime
+                date_to = datetime.fromisoformat(start_date_to.replace('Z', '+00:00'))
+                query = query.filter(CRMSalesCampaign.start_date <= date_to)
+            except ValueError:
+                pass
+        
+        # Apply ordering, pagination
+        return query.order_by(CRMSalesCampaign.created_at.desc()).offset(skip).limit(limit).all()
 
     def list_active(self, limit: int = 20) -> List[CRMSalesCampaign]:
         return self.db.query(CRMSalesCampaign).filter(

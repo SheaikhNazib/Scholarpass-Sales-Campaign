@@ -49,18 +49,18 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white shadow-lg">
+    <aside className="w-64 bg-gradient-to-b from-white to-slate-50 border-r border-gray-200 shadow-sm">
       <div className="h-full flex flex-col">
         {/* Logo/Header */}
-        <div className="px-6 py-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-primary-600">
+        <div className="px-6 py-6 border-b border-gray-200 bg-white">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
             ScholarPASS
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Sales Campaign</p>
+          <p className="text-sm text-gray-600 mt-1 font-medium">Sales Campaign</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -70,17 +70,17 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center px-4 py-3 rounded-lg transition-all duration-200
+                  flex items-center px-4 py-3 rounded-xl transition-all duration-200
                   ${isActive 
-                    ? 'bg-primary-50 text-primary-700 font-semibold' 
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                    ? 'bg-blue-500 text-white font-semibold shadow-md shadow-blue-200' 
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm'
                   }
                 `}
               >
-                <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-600' : 'text-gray-500'}`} />
+                <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                 <span className="flex-1 text-sm">{item.title}</span>
                 {isActive && (
-                  <ChevronRight className="w-4 h-4 text-primary-600" />
+                  <ChevronRight className="w-4 h-4 text-white" />
                 )}
               </Link>
             );
@@ -88,7 +88,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="px-6 py-4 border-t border-gray-200 bg-white">
           <div className="text-xs text-gray-500">
             © 2026 ScholarPASS
           </div>
