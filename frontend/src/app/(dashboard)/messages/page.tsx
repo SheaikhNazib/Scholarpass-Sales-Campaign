@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Plus, Mail, MessageSquare, Phone, Send, Loader2, FilterX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Filter, Plus, Mail, MessageSquare, Phone, Send, Loader2, FilterX, Eye, Edit, Trash2 } from 'lucide-react';
 import { connectActions } from '@/actions/connect';
 import { ConnectMessage } from '@/types/connect';
 
@@ -27,6 +28,7 @@ interface NewMessageForm {
 }
 
 export default function Messages() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [messages, setMessages] = useState<ConnectMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,9 @@ export default function Messages() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [countryCodeSearch, setCountryCodeSearch] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<ConnectMessage | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const countryDropdownRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<MessageFilters>({
     search: '',
@@ -262,6 +267,32 @@ export default function Messages() {
         delete newErrors[field];
         return newErrors;
       });
+    }
+  };
+
+  const handleDeleteClick = (message: ConnectMessage) => {
+    setSelectedMessage(message);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setSelectedMessage(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedMessage) return;
+    
+    try {
+      setDeleting(true);
+      await connectActions.deleteMessage(selectedMessage.id!);
+      setMessages(messages.filter(m => m.id !== selectedMessage.id));
+      setShowDeleteModal(false);
+      setSelectedMessage(null);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || err.message || 'Failed to delete message');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -760,7 +791,7 @@ export default function Messages() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="divide-y divide-gray-200">
                 {filteredMessages.map((message) => (
-                  <div key={message.id} className="p-4 hover:bg-gray-50 cursor-pointer transition-colors">
+                  <div key={message.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 mt-1">
                         {getMessageIcon(message.message_type)}
@@ -786,12 +817,37 @@ export default function Messages() {
                               <p className="text-sm text-gray-700 truncate">{message.body_text.substring(0, 100)}...</p>
                             )}
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-xs text-gray-500">
-                              {message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}
+                          <div className="flex items-start gap-3">
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-xs text-gray-500">
+                                {message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}
+                              </div>
+                              <div className="text-xs text-gray-400 capitalize">
+                                {message.message_type}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-400 capitalize">
-                              {message.message_type}
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => router.push(`/messages/${message.id}`)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => router.push(`/messages/${message.id}/edit`)}
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(message)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1031,6 +1087,51 @@ export default function Messages() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Message</h3>
+                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete the message <span className="font-semibold">"{selectedMessage.subject || 'No Subject'}"</span>?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDeleteCancel}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Message'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
