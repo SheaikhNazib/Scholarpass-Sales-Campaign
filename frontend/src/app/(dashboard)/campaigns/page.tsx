@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Plus, X, FilterX } from 'lucide-react';
+import { Search, Filter, Plus, X, FilterX, Trash2 } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
 import { campaignActions } from '@/actions/campaign';
 import { Campaign, CampaignCreate } from '@/types/campaign';
+import { useRouter } from 'next/navigation';
 
 interface CampaignFilters {
   search: string;
@@ -20,6 +21,7 @@ interface CampaignFilters {
 }
 
 export default function Campaigns() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,9 @@ export default function Campaigns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [filters, setFilters] = useState<CampaignFilters>({
     search: '',
     status: '',
@@ -133,6 +138,35 @@ export default function Campaigns() {
     });
     // Fetch with cleared filters
     setTimeout(() => fetchCampaigns(), 0);
+  };
+
+  const handleDeleteClick = (row: Campaign) => {
+    setSelectedCampaign(row);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedCampaign) return;
+    
+    try {
+      setDeleting(true);
+      await campaignActions.delete(selectedCampaign.id);
+      
+      // Refresh the list after successful deletion
+      await fetchCampaigns();
+      setShowDeleteModal(false);
+      setSelectedCampaign(null);
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+      alert('Failed to delete the campaign. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setSelectedCampaign(null);
   };
 
   const hasActiveFilters = filters.status || filters.location || filters.budgetMin || 
@@ -281,7 +315,7 @@ export default function Campaigns() {
           <p className="text-gray-600 mt-2">View and manage all campaigns in the system</p>
         </div>
         <button 
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => router.push('/campaigns/add')}
           className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
         >
           <Plus className="w-5 h-5" />
@@ -531,7 +565,10 @@ export default function Campaigns() {
             data={filteredCampaigns}
             columns={columns}
             itemsPerPage={10}
-            onRowClick={(row) => console.log('Clicked:', row)}
+            onRowClick={(row) => router.push(`/campaigns/${row.id}`)}
+            onView={(row) => router.push(`/campaigns/${row.id}`)}
+            onEdit={(row) => router.push(`/campaigns/${row.id}/edit`)}
+            onDelete={handleDeleteClick}
             emptyMessage="No campaigns found"
           />
         </>
@@ -551,6 +588,56 @@ export default function Campaigns() {
             <h3 className="text-2xl font-bold text-gray-900 mb-3">No campaigns yet</h3>
             <p className="text-gray-600 mb-8 text-lg">Get started by creating your first campaign</p>
             <button 
+              onClick={() => router.push('/campaigns/add')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Create Campaign
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedCampaign && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Campaign</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete <span className="font-semibold">"{selectedCampaign.name}"</span>? 
+                This will permanently remove this campaign and all associated data.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCancel}
+                  disabled={deleting}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Campaign'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*   <button 
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
             >
