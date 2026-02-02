@@ -10,6 +10,9 @@ import { API_PATH } from '@constant/api-path';
 import { useAuth } from '@/hooks/useAuth';
 import { AutocompleteSelect } from '@/components/common/autocomplete-select';
 
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+
 interface Campaign {
   id: number;
   name: string;
@@ -319,14 +322,13 @@ export default function AddOpportunityPage() {
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
               Phone
             </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
+            <PhoneInput
+              country={'us'}
               value={formData.phone || ''}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter phone number"
+              onChange={(value: string) => setFormData(prev => ({ ...prev, phone: value }))}
+              inputClass="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              containerClass="w-full"
+              buttonClass="border border-gray-300 rounded-l-lg"
             />
           </div>
 
