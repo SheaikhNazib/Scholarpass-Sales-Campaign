@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Loader2 } from 'lucide-react';
+import { Search, Filter, Plus, Loader2, Trash2 } from 'lucide-react';
 import TableArchive, { Column } from '@/components/common/TableArchive';
 import { campaignActions, Campaign } from '@/actions/campaign';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,9 @@ export default function MyCampaigns() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [filters, setFilters] = useState<CampaignFilters>({
     search: '',
     status: '',
@@ -81,6 +84,35 @@ export default function MyCampaigns() {
     setTimeout(() => fetchCampaigns(), 0);
   };
 
+  const handleDeleteClick = (row: Campaign) => {
+    setSelectedCampaign(row);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedCampaign) return;
+    
+    try {
+      setDeleting(true);
+      await campaignActions.delete(selectedCampaign.id);
+      
+      // Refresh the list after successful deletion
+      await fetchCampaigns();
+      setShowDeleteModal(false);
+      setSelectedCampaign(null);
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+      alert('Failed to delete the campaign. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setSelectedCampaign(null);
+  };
+
   const columns: Column<Campaign>[] = [
     { 
       key: 'name', 
@@ -109,7 +141,7 @@ export default function MyCampaigns() {
       render: (value) => value ? new Date(value as string).toLocaleDateString() : 'N/A'
     },
     { 
-      key: 'end_date', 
+      key: 'end_date',
       title: 'End Date',
       render: (value) => value ? new Date(value as string).toLocaleDateString() : 'N/A'
     },
@@ -261,7 +293,10 @@ export default function MyCampaigns() {
               <TableArchive
                 data={campaigns}
                 columns={columns}
-                onRowClick={(row) => router.push(`/campaigns/${row.id}`)}
+                onRowClick={(row) => router.push(`/my-campaigns/${row.id}`)}
+                onView={(row) => router.push(`/my-campaigns/${row.id}`)}
+                onEdit={(row) => router.push(`/my-campaigns/${row.id}/edit`)}
+                onDelete={handleDeleteClick}
               />
             ) : (
               <div className="text-center py-12">
@@ -273,6 +308,45 @@ export default function MyCampaigns() {
             )}
           </div>
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedCampaign && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Campaign</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete <span className="font-semibold">"{selectedCampaign.name}"</span>? 
+                This will permanently remove this campaign and all associated data.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCancel}
+                  disabled={deleting}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Campaign'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
